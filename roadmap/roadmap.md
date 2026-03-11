@@ -649,7 +649,7 @@ CI strictness increases as the project matures:
 
 **Priority:** Critical | **Impact:** Very High | **Effort:** Medium | **Risk:** Low
 **Source:** Product Roadmap v1 — Phase 0
-**Status:** Not Started
+**Status:** Done (except T-001 branch protection — human task)
 **Dependencies:** None
 **AI-first benefit:** Deterministic repo structure enables agents to navigate and contribute from first clone.
 
@@ -657,37 +657,37 @@ Establish the foundational repository structure, Zed extension manifest, and WAS
 
 #### Definition of Done
 
-- [ ] **T-001** — Initialise Git repository with `main` branch protection rules
-- [ ] **T-002** — Create `extension.toml` manifest
-  - [ ] Set `id = "stringknife"`, `name = "StringKnife"`, `schema_version = 1`
-  - [ ] Add `description`, `authors`, `repository` fields
-  - [ ] Register language server entry: `[language_servers.stringknife-lsp]`
-  - [ ] Map language server to broad file types: `["Rust", "TypeScript", "JavaScript", "Python", "Go", "Ruby", "HTML", "CSS", "JSON", "TOML", "YAML", "Markdown", "Plain Text", "C", "C++", "Java", "Kotlin", "Swift", "Shell Script", "SQL", "Elixir", "PHP"]`
-- [ ] **T-003** — Create `Cargo.toml` for the Zed extension WASM crate
-  - [ ] Set `crate-type = ["cdylib"]`
-  - [ ] Add `zed_extension_api = "0.7.0"` dependency
-- [ ] **T-004** — Create `src/lib.rs` with minimal `Extension` trait implementation
-  - [ ] Implement `language_server_command()` to return path to bundled LSP binary
-  - [ ] Implement `language_server_initialization_options()` returning empty config
-  - [ ] Call `register_extension!` macro
-- [ ] **T-005** — Add `LICENSE` (MIT) at repository root
-- [ ] **T-006** — Create `.gitignore` (target/, node_modules/, *.wasm, .jj/)
-- [ ] **T-007** — Create `README.md` with project overview, installation instructions, and feature list placeholder
-- [ ] **T-008** — Create `CHANGELOG.md` with `## [Unreleased]` section
-- [ ] **T-009** — Create `CONTRIBUTING.md` with dev setup instructions
+- [ ] **T-001** — Initialise Git repository with `main` branch protection rules *(repo exists; branch protection requires GitHub config — human task)*
+- [x] **T-002** — Create `extension.toml` manifest
+  - [x] Set `id = "stringknife"`, `name = "StringKnife"`, `schema_version = 1`
+  - [x] Add `description`, `authors`, `repository` fields
+  - [x] Register language server entry: `[language_servers.stringknife-lsp]`
+  - [x] Map language server to broad file types: `["Rust", "TypeScript", "JavaScript", "Python", "Go", "Ruby", "HTML", "CSS", "JSON", "TOML", "YAML", "Markdown", "Plain Text", "C", "C++", "Java", "Kotlin", "Swift", "Shell Script", "SQL", "Elixir", "PHP"]`
+- [x] **T-003** — Create `Cargo.toml` for the Zed extension WASM crate
+  - [x] Set `crate-type = ["cdylib"]`
+  - [x] Add `zed_extension_api = "0.7.0"` dependency
+- [x] **T-004** — Create `src/lib.rs` with minimal `Extension` trait implementation
+  - [x] Implement `language_server_command()` to return path to bundled LSP binary
+  - [x] Implement `language_server_initialization_options()` returning empty config
+  - [x] Call `register_extension!` macro
+- [x] **T-005** — Add `LICENSE` (MIT) at repository root
+- [x] **T-006** — Create `.gitignore` (target/, node_modules/, *.wasm, .jj/)
+- [x] **T-007** — Create `README.md` with project overview, installation instructions, and feature list placeholder
+- [x] **T-008** — Create `CHANGELOG.md` with `## [Unreleased]` section
+- [x] **T-009** — Create `CONTRIBUTING.md` with dev setup instructions
 
 #### Verification
 
-- [ ] `cargo check` passes on the WASM crate without errors
-- [ ] `extension.toml` validates against Zed's extension schema
-- [ ] All files listed above exist at repository root
-- [ ] `.gitignore` excludes `target/`, `node_modules/`, `*.wasm`, `.jj/`
+- [x] `cargo check` passes on the WASM crate without errors
+- [x] `extension.toml` validates against Zed's extension schema
+- [x] All files listed above exist at repository root
+- [x] `.gitignore` excludes `target/`, `node_modules/`, `*.wasm`, `.jj/`
 
 ### EPIC-0.1A: Codebase Intelligence Vault (Persistent Agent Memory)
 
 **Priority:** Critical | **Impact:** Very High | **Effort:** Medium | **Risk:** Low
 **Source:** Roadmap Amendment — Codebase Intelligence Vault
-**Status:** Not Started
+**Status:** Done
 **Dependencies:** EPIC-0.1
 **AI-first benefit:** Graph-navigable, frontmatter-queryable knowledge base compounds with every coding session. Agents read it for context, write to it for continuity, and ariscan output lands in it for longitudinal tracking.
 
@@ -699,95 +699,95 @@ Establish the foundational repository structure, Zed extension manifest, and WAS
 
 #### Definition of Done
 
-- [ ] **T-655** — Create `CLAUDE.md` at repository root
-  - [ ] 30-second architecture summary (under 80 lines)
-  - [ ] Link to `.vault/sessions/NEXT-SESSION.md` as the agent session entry point
-  - [ ] File map table: path → what it is → when to read it
-  - [ ] ARI gate thresholds table (one row per checkpoint)
-  - [ ] Key constraints checklist (project-specific hard rules agents must not violate)
+- [x] **T-655** — Create `CLAUDE.md` at repository root
+  - [x] 30-second architecture summary (under 80 lines)
+  - [x] Link to `.vault/sessions/NEXT-SESSION.md` as the agent session entry point
+  - [x] File map table: path → what it is → when to read it
+  - [x] ARI gate thresholds table (one row per checkpoint)
+  - [x] Key constraints checklist (project-specific hard rules agents must not violate)
 
-- [ ] **T-656** — Create `.vault/` directory structure and Obsidian config
-  - [ ] `.vault/.obsidian/app.json` — source mode, frontmatter visible, line numbers on
-  - [ ] `.vault/.obsidian/graph.json` — colour groups by tag: `#ari-pillar`, `#session`,
+- [x] **T-656** — Create `.vault/` directory structure and Obsidian config
+  - [x] `.vault/.obsidian/app.json` — source mode, frontmatter visible, line numbers on
+  - [x] `.vault/.obsidian/graph.json` — colour groups by tag: `#ari-pillar`, `#session`,
         `#pattern`, `#adr`, `#audit`, `#transform`
-  - [ ] `.vault/Home.md` — master index with wikilink navigation to all vault sections
-  - [ ] `.vault/README.md` — how to open as Obsidian vault, agent protocol summary,
+  - [x] `.vault/Home.md` — master index with wikilink navigation to all vault sections
+  - [x] `.vault/README.md` — how to open as Obsidian vault, agent protocol summary,
         ariscan integration notes
 
-- [ ] **T-657** — Create `.vault/architecture/` — Architecture Decision Records
-  - [ ] One ADR per major architectural decision, using frontmatter:
+- [x] **T-657** — Create `.vault/architecture/` — Architecture Decision Records
+  - [x] One ADR per major architectural decision, using frontmatter:
         `type: adr`, `status: accepted|proposed|deprecated`, `tags: [adr, architecture]`
-  - [ ] Each ADR includes: status, context, decision, alternatives rejected, consequences,
+  - [x] Each ADR includes: status, context, decision, alternatives rejected, consequences,
         linked notes via wikilinks
-  - [ ] `System Context.md` — component summary, data flow, links to ADRs
-  - [ ] Migrate any existing ADRs from flat `docs/` into vault format with frontmatter
+  - [x] `System Context.md` — component summary, data flow, links to ADRs
+  - [x] Migrate any existing ADRs from flat `docs/` into vault format with frontmatter
 
-- [ ] **T-658** — Create `.vault/ari/` — ARI Pillar Tracking
-  - [ ] `ARI Dashboard.md` — composite score trajectory table (one row per checkpoint),
+- [x] **T-658** — Create `.vault/ari/` — ARI Pillar Tracking
+  - [x] `ARI Dashboard.md` — composite score trajectory table (one row per checkpoint),
         per-pillar score table, remediation queue section, links to checkpoint notes
-  - [ ] One note per ARI pillar (8 total), each with frontmatter fields:
+  - [x] One note per ARI pillar (8 total), each with frontmatter fields:
         `pillar_number`, `current_score`, `target_phase0`, `target_v1`, `weight`
-  - [ ] Each pillar note includes: definition, project-specific strategy,
+  - [x] Each pillar note includes: definition, project-specific strategy,
         "what good looks like" checklist, current findings section, linked notes
-  - [ ] Weight distribution per empirical research: Test Isolation + Build Determinism +
+  - [x] Weight distribution per empirical research: Test Isolation + Build Determinism +
         Type Safety at `above-equal`; Security Gate as binary `gate`; remainder at `equal`
-  - [ ] Migrate any existing `docs/ari/` content into vault notes
+  - [x] Migrate any existing `docs/ari/` content into vault notes
 
-- [ ] **T-659** — Create `.vault/sessions/` — Agent Session Infrastructure
-  - [ ] `Session Log.md` — chronological table: session #, date, agent, focus, outcome, link
-  - [ ] `NEXT-SESSION.md` — frontmatter: `current_phase`, `current_ticket`, `blocked_by`;
+- [x] **T-659** — Create `.vault/sessions/` — Agent Session Infrastructure
+  - [x] `Session Log.md` — chronological table: session #, date, agent, focus, outcome, link
+  - [x] `NEXT-SESSION.md` — frontmatter: `current_phase`, `current_ticket`, `blocked_by`;
         sections: current state, what last agent did, what next agent should do,
         files to read first, environment notes
-  - [ ] Convention documented: agents create a session note on end, update NEXT-SESSION.md,
+  - [x] Convention documented: agents create a session note on end, update NEXT-SESSION.md,
         add row to Session Log
 
-- [ ] **T-660** — Create `.vault/patterns/` — Codebase Patterns & Agent Guides
-  - [ ] `Adding a New Transform.md` — step-by-step with code templates and anti-patterns
-  - [ ] `Gotchas.md` — "don't touch this, it's deliberate" annotations. Architectural
+- [x] **T-660** — Create `.vault/patterns/` — Codebase Patterns & Agent Guides
+  - [x] `Adding a New Transform.md` — step-by-step with code templates and anti-patterns
+  - [x] `Gotchas.md` — "don't touch this, it's deliberate" annotations. Architectural
         constraints that look like bugs. Intentional trade-offs.
-  - [ ] `Dependency Budget.md` — hard rules on what can be added, version policies,
+  - [x] `Dependency Budget.md` — hard rules on what can be added, version policies,
         approved libraries, process for adding new dependencies.
-  - [ ] All pattern notes tagged `#pattern` with `type: pattern` in frontmatter
+  - [x] All pattern notes tagged `#pattern` with `type: pattern` in frontmatter
 
-- [ ] **T-661** — Create `.vault/transforms/` — Transform Registry
-  - [ ] `Transform Registry.md` — registry tracking all transforms with columns:
+- [x] **T-661** — Create `.vault/transforms/` — Transform Registry
+  - [x] `Transform Registry.md` — registry tracking all transforms with columns:
         Name, Module/File, Status, Tests, Ticket
-  - [ ] Pre-populate from roadmap tickets where possible
-  - [ ] Convention: update status to ✅ on implementation, add test count and commit SHA
+  - [x] Pre-populate from roadmap tickets where possible
+  - [x] Convention: update status to ✅ on implementation, add test count and commit SHA
 
-- [ ] **T-662** — Create `.vault/pm-reviews/` and `.vault/audits/` indexes
-  - [ ] `PM Reviews.md` — indexed table of all PM reviews with phase gate, status, link
-  - [ ] `Audit Index.md` — tables for each audit series (code quality, security,
+- [x] **T-662** — Create `.vault/pm-reviews/` and `.vault/audits/` indexes
+  - [x] `PM Reviews.md` — indexed table of all PM reviews with phase gate, status, link
+  - [x] `Audit Index.md` — tables for each audit series (code quality, security,
         architecture, dependency, UX)
-  - [ ] Migrate any existing `docs/pm-reviews/` and `docs/audits/` references
+  - [x] Migrate any existing `docs/pm-reviews/` and `docs/audits/` references
 
-- [ ] **T-663** — Create `.vault/templates/`
-  - [ ] `Session Template.md` — frontmatter: session_number, agent, phase,
+- [x] **T-663** — Create `.vault/templates/`
+  - [x] `Session Template.md` — frontmatter: session_number, agent, phase,
         tickets_attempted/completed/blocked; sections: objective, tickets worked,
         decisions made, gotchas discovered, ARI impact, handoff to next session
-  - [ ] `ARI Checkpoint Template.md` — frontmatter: checkpoint, composite_score,
+  - [x] `ARI Checkpoint Template.md` — frontmatter: checkpoint, composite_score,
         gate_threshold, gate_passed; sections: per-pillar scores with delta from
         previous, remediation items
 
-- [ ] **T-664** — Create `.claude/skills/vault-interaction/SKILL.md`
-  - [ ] Session start protocol (what to read, in what order)
-  - [ ] Frontmatter as structured data (explain the YAML contract)
-  - [ ] Wikilinks as navigation (explain `[[Note Name]]` convention)
-  - [ ] Session end protocol (create note, update handoff, update registry)
-  - [ ] Full `.vault/` file structure reference
+- [x] **T-664** — Create `.claude/skills/vault-interaction/SKILL.md`
+  - [x] Session start protocol (what to read, in what order)
+  - [x] Frontmatter as structured data (explain the YAML contract)
+  - [x] Wikilinks as navigation (explain `[[Note Name]]` convention)
+  - [x] Session end protocol (create note, update handoff, update registry)
+  - [x] Full `.vault/` file structure reference
 
-- [ ] **T-665** — Update `.gitignore` for vault
-  - [ ] Track: `.vault/.obsidian/app.json`, `.vault/.obsidian/graph.json`
-  - [ ] Ignore: `.vault/.obsidian/workspace.json`, `workspace-mobile.json`,
+- [x] **T-665** — Update `.gitignore` for vault
+  - [x] Track: `.vault/.obsidian/app.json`, `.vault/.obsidian/graph.json`
+  - [x] Ignore: `.vault/.obsidian/workspace.json`, `workspace-mobile.json`,
         `hotkeys.json`, `community-plugins.json`, `core-plugins.json`,
         `core-plugins-migration.json`, `plugins/`
 
-- [ ] **T-666** — Update `HINTS.md` to reference vault
-  - [ ] Add "Vault Maintenance" section: agents must update session state (not optional)
-  - [ ] Add "ARI Dashboard is manually updated" note (human review required at this stage)
-  - [ ] Add project-specific intentional suppressions
+- [x] **T-666** — Update `HINTS.md` to reference vault
+  - [x] Add "Vault Maintenance" section: agents must update session state (not optional)
+  - [x] Add "ARI Dashboard is manually updated" note (human review required at this stage)
+  - [x] Add project-specific intentional suppressions
 
-- [ ] **T-667** — Verify vault graph connectivity
+- [ ] **T-667** — Verify vault graph connectivity *(requires human with Obsidian)*
   - [ ] Open `.vault/` as Obsidian vault — confirm graph view renders with colour-coded nodes
   - [ ] Confirm all wikilinks resolve (no broken `[[...]]` references)
   - [ ] Confirm `Home.md` reaches every section within 2 hops
@@ -807,7 +807,7 @@ Establish the foundational repository structure, Zed extension manifest, and WAS
 
 **Priority:** Critical | **Impact:** Very High | **Effort:** Medium | **Risk:** Low
 **Source:** Product Roadmap v1 — Phase 0
-**Status:** Not Started
+**Status:** Done (except T-034 ariscan baseline — requires tool)
 **Dependencies:** EPIC-0.1, EPIC-0.1A
 **AI-first benefit:** ARI-first setup ensures agents can reason about, test, and contribute to the codebase from the earliest commits.
 
@@ -815,49 +815,49 @@ Lay the agent-readiness infrastructure: HINTS.md for LCI-compatible context, str
 
 #### Definition of Done
 
-- [ ] **T-025** — Create `HINTS.md` at repository root
-  - [ ] Document repo structure and purpose of each directory
-  - [ ] Document the LSP ↔ WASM extension architecture
-  - [ ] Document how to add a new string operation (step-by-step)
-  - [ ] Document test patterns and conventions
-- [ ] **T-026** — Create `rust-toolchain.toml` pinning stable channel (Build Determinism)
-- [ ] **T-027** — Commit `Cargo.lock` to version control (Build Determinism)
-- [ ] **T-028** — Configure strict Clippy lints in workspace `Cargo.toml` or `.clippy.toml`
-  - [ ] `#![deny(clippy::unwrap_used)]` in library code
-  - [ ] `#![deny(clippy::panic)]` in library code
-  - [ ] `#![warn(clippy::pedantic)]`
-- [ ] **T-029** — Define `StringKnifeError` enum with structured error variants (Error Explicitness)
-  - [ ] `InvalidInput { operation: String, reason: String }`
-  - [ ] `UnsupportedEncoding { encoding: String }`
-  - [ ] `InputTooLarge { max_bytes: usize, actual_bytes: usize }`
-  - [ ] Implement `Display` and `std::error::Error`
-- [ ] **T-030** — Create `transforms/` module directory with `mod.rs` (Modular Coherence)
-  - [ ] Each transform category gets its own submodule file
-  - [ ] All transforms are pure functions: `fn(input: &str) -> Result<String, StringKnifeError>`
-  - [ ] No LSP types, no I/O, no side effects in transform modules
-- [ ] **T-031** — Add `cargo-deny` configuration (`deny.toml`)
-  - [ ] License allowlist: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, Zlib
-  - [ ] Advisory database check enabled
-  - [ ] Duplicate crate detection enabled
-- [ ] **T-032** — Add `cargo-audit` to CI pipeline (Security gate)
-- [ ] **T-033** — Add rustdoc comments on all public types and functions (Documentation Density)
-- [ ] **T-034** — Install and run `ariscan` against the repo — establish **ARI-BASELINE** score
+- [x] **T-025** — Create `HINTS.md` at repository root
+  - [x] Document repo structure and purpose of each directory
+  - [x] Document the LSP ↔ WASM extension architecture
+  - [x] Document how to add a new string operation (step-by-step)
+  - [x] Document test patterns and conventions
+- [x] **T-026** — Create `rust-toolchain.toml` pinning stable channel (Build Determinism)
+- [x] **T-027** — Commit `Cargo.lock` to version control (Build Determinism)
+- [x] **T-028** — Configure strict Clippy lints in workspace `Cargo.toml` or `.clippy.toml`
+  - [x] `#![deny(clippy::unwrap_used)]` in library code
+  - [x] `#![deny(clippy::panic)]` in library code
+  - [x] `#![warn(clippy::pedantic)]`
+- [x] **T-029** — Define `StringKnifeError` enum with structured error variants (Error Explicitness)
+  - [x] `InvalidInput { operation: String, reason: String }`
+  - [x] `UnsupportedEncoding { encoding: String }`
+  - [x] `InputTooLarge { max_bytes: usize, actual_bytes: usize }`
+  - [x] Implement `Display` and `std::error::Error`
+- [x] **T-030** — Create `transforms/` module directory with `mod.rs` (Modular Coherence)
+  - [x] Each transform category gets its own submodule file
+  - [x] All transforms are pure functions: `fn(input: &str) -> Result<String, StringKnifeError>`
+  - [x] No LSP types, no I/O, no side effects in transform modules
+- [x] **T-031** — Add `cargo-deny` configuration (`deny.toml`)
+  - [x] License allowlist: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, Zlib
+  - [x] Advisory database check enabled
+  - [x] Duplicate crate detection enabled
+- [x] **T-032** — Add `cargo-audit` to CI pipeline (Security gate)
+- [x] **T-033** — Add rustdoc comments on all public types and functions (Documentation Density)
+- [ ] **T-034** — Install and run `ariscan` against the repo — establish **ARI-BASELINE** score *(requires ariscan tool — human task)*
   - [ ] Record baseline scores per pillar in `docs/ari/ARI-BASELINE.md`
   - [ ] Identify any pillar below 6.0 and create remediation tickets
 
 #### Verification
 
-- [ ] `cargo clippy -- -D warnings` passes with zero warnings
-- [ ] `cargo deny check` passes with zero violations
-- [ ] `ariscan` produces a valid ARI-BASELINE report
-- [ ] `HINTS.md` contains all four required documentation sections
-- [ ] `StringKnifeError` compiles with all three variants and `Display` impl
+- [x] `cargo clippy -- -D warnings` passes with zero warnings
+- [ ] `cargo deny check` passes with zero violations *(needs CI run)*
+- [ ] `ariscan` produces a valid ARI-BASELINE report *(requires ariscan tool)*
+- [x] `HINTS.md` contains all four required documentation sections
+- [x] `StringKnifeError` compiles with all three variants and `Display` impl
 
 ### EPIC-0.3: Language Server Skeleton
 
 **Priority:** Critical | **Impact:** Very High | **Effort:** High | **Risk:** Medium
 **Source:** Product Roadmap v1 — Phase 0
-**Status:** Not Started
+**Status:** Done
 **Dependencies:** EPIC-0.1
 **AI-first benefit:** Clean LSP skeleton with typed handlers enables agents to add new code actions by following established patterns.
 
@@ -865,23 +865,23 @@ Build the minimal LSP server binary that speaks the Language Server Protocol ove
 
 #### Definition of Done
 
-- [ ] **T-010** — Create `lsp/` directory for the LSP binary crate
-- [ ] **T-011** — Create `lsp/Cargo.toml`
-  - [ ] Add dependencies: `tower-lsp`, `tokio`, `serde`, `serde_json`
-  - [ ] Set binary name: `stringknife-lsp`
-- [ ] **T-012** — Implement minimal LSP server in `lsp/src/main.rs`
-  - [ ] Implement `initialize` handler returning server capabilities
-  - [ ] Declare `codeActionProvider = true` in capabilities
-  - [ ] Declare `textDocumentSync` as `Full` (needed to access document text)
-  - [ ] Implement `textDocument/didOpen` handler to store document text
-  - [ ] Implement `textDocument/didChange` handler to update stored text
-  - [ ] Implement `textDocument/codeAction` handler returning empty actions list
-  - [ ] Implement `shutdown` handler
-- [ ] **T-013** — Add document text store (HashMap<Url, String>) to server state
-- [ ] **T-014** — Verify LSP binary compiles and runs standalone with `--stdio` flag
-- [ ] **T-015** — Wire extension WASM to download/locate the LSP binary
-  - [ ] For dev: point to local `target/release/stringknife-lsp`
-  - [ ] For published: implement binary download from GitHub Releases via `zed::download_file()`
+- [x] **T-010** — Create `lsp/` directory for the LSP binary crate *(named `stringknife-lsp/`)*
+- [x] **T-011** — Create `lsp/Cargo.toml`
+  - [x] Add dependencies: `tower-lsp`, `tokio`, `serde`, `serde_json`
+  - [x] Set binary name: `stringknife-lsp`
+- [x] **T-012** — Implement minimal LSP server in `lsp/src/main.rs`
+  - [x] Implement `initialize` handler returning server capabilities
+  - [x] Declare `codeActionProvider = true` in capabilities
+  - [x] Declare `textDocumentSync` as `Full` (needed to access document text)
+  - [x] Implement `textDocument/didOpen` handler to store document text
+  - [x] Implement `textDocument/didChange` handler to update stored text
+  - [x] Implement `textDocument/codeAction` handler with Reverse String action
+  - [x] Implement `shutdown` handler
+- [x] **T-013** — Add document text store (HashMap<Url, String>) to server state
+- [x] **T-014** — Verify LSP binary compiles and runs standalone with `--stdio` flag
+- [x] **T-015** — Wire extension WASM to download/locate the LSP binary
+  - [x] For dev: point to local `target/release/stringknife-lsp` via `worktree.which()`
+  - [ ] For published: implement binary download from GitHub Releases via `zed::download_file()` *(deferred to release phase)*
 
 #### Verification
 
@@ -894,7 +894,7 @@ Build the minimal LSP server binary that speaks the Language Server Protocol ove
 
 **Priority:** Critical | **Impact:** Very High | **Effort:** Medium | **Risk:** Medium
 **Source:** Product Roadmap v1 — Phase 0
-**Status:** Not Started
+**Status:** Done (code complete — T-018/T-019/T-020 need manual Zed verification)
 **Dependencies:** EPIC-0.2, EPIC-0.3
 **AI-first benefit:** Proves the full pipeline end-to-end, giving agents a working reference implementation to pattern-match against.
 
@@ -902,16 +902,16 @@ Wire a single hardcoded code action ("Reverse String") through the entire stack:
 
 #### Definition of Done
 
-- [ ] **T-016** — Add a single hardcoded code action: "StringKnife: Reverse String"
-  - [ ] Implement as a pure function in `transforms/misc.rs`
-  - [ ] Wire into LSP code action handler
-  - [ ] Extract selected text range from `CodeActionParams`
-  - [ ] Return `CodeAction` with `WorkspaceEdit` replacing the selection range
-- [ ] **T-017** — Add unit test for reverse string transform (isolated, no LSP dependency)
-- [ ] **T-018** — Install as dev extension in Zed (`zed: install dev extension`)
-- [ ] **T-019** — Verify code action appears in context menu when text is selected
-- [ ] **T-020** — Verify selecting the action replaces text correctly
-- [ ] **T-035** — Document the dev install workflow in `CONTRIBUTING.md`
+- [x] **T-016** — Add a single hardcoded code action: "StringKnife: Reverse String"
+  - [x] Implement as a pure function in `transforms/misc.rs`
+  - [x] Wire into LSP code action handler
+  - [x] Extract selected text range from `CodeActionParams`
+  - [x] Return `CodeAction` with `WorkspaceEdit` replacing the selection range
+- [x] **T-017** — Add unit test for reverse string transform (isolated, no LSP dependency)
+- [ ] **T-018** — Install as dev extension in Zed (`zed: install dev extension`) *(manual verification)*
+- [ ] **T-019** — Verify code action appears in context menu when text is selected *(manual verification)*
+- [ ] **T-020** — Verify selecting the action replaces text correctly *(manual verification)*
+- [x] **T-035** — Document the dev install workflow in `CONTRIBUTING.md`
 
 #### Verification
 
@@ -924,7 +924,7 @@ Wire a single hardcoded code action ("Reverse String") through the entire stack:
 
 **Priority:** Critical | **Impact:** High | **Effort:** Medium | **Risk:** Low
 **Source:** Product Roadmap v1 — Phase 0
-**Status:** Not Started
+**Status:** Done (except T-023 ariscan, T-036 branch protection, T-038/T-039 labeler/queue)
 **Dependencies:** EPIC-0.1, EPIC-0.2, EPIC-0.3
 **AI-first benefit:** Automated CI with ariscan integration gives agents immediate feedback on whether their changes maintain quality standards.
 
@@ -932,26 +932,26 @@ Set up GitHub Actions workflows for continuous integration (build, test, lint, a
 
 #### Definition of Done
 
-- [ ] **T-021** — Create `.github/workflows/ci.yml`
-  - [ ] Run `cargo check` on both WASM crate and LSP crate
-  - [ ] Run `cargo test` on LSP crate
-  - [ ] Run `cargo clippy` with `-D warnings`
-  - [ ] Run `cargo fmt --check`
-  - [ ] Run `cargo deny check` (license + advisory)
-  - [ ] Run `cargo audit` (security)
-  - [ ] Run `ariscan` and output ARI score summary (informational, non-blocking initially)
-- [ ] **T-022** — Create `.github/workflows/release.yml`
-  - [ ] Trigger on Git tag `v*`
-  - [ ] Cross-compile LSP binary for `x86_64-apple-darwin`, `aarch64-apple-darwin`, `x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-gnu`, `x86_64-pc-windows-msvc`
-  - [ ] Upload binaries as GitHub Release assets
-  - [ ] Generate checksums (SHA256)
-- [ ] **T-023** — Create `.github/workflows/ariscan.yml`
+- [x] **T-021** — Create `.github/workflows/ci.yml`
+  - [x] Run `cargo check` on both WASM crate and LSP crate
+  - [x] Run `cargo test` on LSP crate
+  - [x] Run `cargo clippy` with `-D warnings`
+  - [x] Run `cargo fmt --check`
+  - [x] Run `cargo deny check` (license + advisory)
+  - [x] Run `cargo audit` (security)
+  - [ ] Run `ariscan` and output ARI score summary *(deferred — requires ariscan tool)*
+- [x] **T-022** — Create `.github/workflows/release.yml`
+  - [x] Trigger on Git tag `v*`
+  - [x] Cross-compile LSP binary for `x86_64-apple-darwin`, `aarch64-apple-darwin`, `x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-gnu`, `x86_64-pc-windows-msvc`
+  - [x] Upload binaries as GitHub Release assets
+  - [x] Generate checksums (SHA256)
+- [ ] **T-023** — Create `.github/workflows/ariscan.yml` *(deferred — requires ariscan tool)*
   - [ ] Run `ariscan` on every PR
   - [ ] Post ARI score as PR comment (per-pillar breakdown)
   - [ ] Fail PR if any pillar drops below its phase target threshold
   - [ ] Cache previous score for delta comparison
-- [ ] **T-024** — Add Dependabot config for Cargo dependency updates
-- [ ] **T-036** — Configure branch protection rules on `main`
+- [x] **T-024** — Add Dependabot config for Cargo dependency updates
+- [ ] **T-036** — Configure branch protection rules on `main` *(requires GitHub settings — human task)*
   - [ ] Require 1 approving PR review
   - [ ] Require all CI status checks to pass
   - [ ] Require branch to be up-to-date before merge
@@ -959,11 +959,11 @@ Set up GitHub Actions workflows for continuous integration (build, test, lint, a
   - [ ] Disable direct pushes to `main`
   - [ ] Enable dismiss stale reviews on new pushes
   - [ ] Require conversation resolution before merge
-- [ ] **T-037** — Create `.github/pull_request_template.md`
-  - [ ] Include PR checklist (tests, no unsafe, docs updated, ARI check)
-  - [ ] Include conventional commit format guidance
-  - [ ] Include breaking change flag instructions
-- [ ] **T-038** — Create `.github/workflows/pr-labeler.yml`
+- [x] **T-037** — Create `.github/pull_request_template.md`
+  - [x] Include PR checklist (tests, no unsafe, docs updated, ARI check)
+  - [x] Include conventional commit format guidance
+  - [x] Include breaking change flag instructions
+- [ ] **T-038** — Create `.github/workflows/pr-labeler.yml` *(deferred — low priority)*
   - [ ] Auto-label PRs by size (S/M/L/XL)
   - [ ] Auto-label PRs by phase scope based on changed file paths
   - [ ] Apply `needs-review` label on PR open
