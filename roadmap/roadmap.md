@@ -2546,6 +2546,9 @@ Implement gzip and deflate compression/decompression with Base64 encoding for te
   - **Notes:** ariscan P5 (Doc Machine-Readability) scored 25/100. It looks for API specs (OpenAPI/GraphQL), formal error taxonomy docs, and runbooks. `StringKnifeError` enum serves as the error taxonomy in code but is not surfaced as a standalone doc. Consider generating an error catalog from rustdoc or adding an `errors.md`.
 
 - [ ] **B-018** — ARI P6 Remediation: Investigate ariscan Rust-specific build determinism detection
+  - **Priority:** Low | **Impact:** Medium | **Effort:** Small | **Risk:** Low
+  - **Status:** Not Started
+  - **Notes:** ariscan P6 (Build Determinism & Type Safety) scored 50/100. It checks for `tsconfig.json strict` mode (not applicable to Rust). Rust's type system + Clippy pedantic lints provide equivalent safety. This may need an ariscan enhancement for Rust ecosystem detection.
 
 - [ ] **B-019** — Prontiq blog post: "Building a Zed Extension Agent-First" (drafted from `docs/ariscan-case-study.md`)
   - **Priority:** Low | **Impact:** Medium | **Effort:** Medium | **Risk:** Low
@@ -2556,9 +2559,6 @@ Implement gzip and deflate compression/decompression with Base64 encoding for te
   - **Priority:** Low | **Impact:** Medium | **Effort:** Medium | **Risk:** Low
   - **Status:** Not Started
   - **Dependencies:** T-670 complete
-  - **Priority:** Low | **Impact:** Medium | **Effort:** Small | **Risk:** Low
-  - **Status:** Not Started
-  - **Notes:** ariscan P6 (Build Determinism & Type Safety) scored 50/100. It checks for `tsconfig.json strict` mode (not applicable to Rust). Rust's type system + Clippy pedantic lints provide equivalent safety. This may need an ariscan enhancement for Rust ecosystem detection.
 
 ---
 
