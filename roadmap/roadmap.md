@@ -1426,7 +1426,7 @@ Implement JSON pretty print, minify, escape/unescape, and cross-format conversio
 
 **Priority:** Medium | **Impact:** Medium | **Effort:** Small | **Risk:** Low
 **Source:** Product Roadmap v1 — Phase 2
-**Status:** Not Started
+**Status:** Done
 **Dependencies:** EPIC-0.4
 **AI-first benefit:** Small, isolated module with clear input/output — straightforward for agent implementation.
 
@@ -1434,16 +1434,16 @@ Implement XML pretty print and minify operations for developers working with XML
 
 #### Definition of Done
 
-- [ ] **T-230** — Implement `XML Pretty Print` code action
-  - [ ] Pure function in `transforms/xml.rs`
-- [ ] **T-231** — Implement `XML Minify` code action
-- [ ] **T-232** — Unit tests for XML operations
+- [x] **T-230** — Implement `XML Pretty Print` code action
+  - [x] Pure function in `transforms/xml.rs`
+- [x] **T-231** — Implement `XML Minify` code action
+- [x] **T-232** — Unit tests for XML operations
 
 #### Verification
 
-- [ ] `cargo test -p transforms -- xml` passes all tests
-- [ ] Nested XML elements are correctly indented
-- [ ] Minified XML is valid and parseable
+- [x] `cargo test -p transforms -- xml` passes all tests
+- [x] Nested XML elements are correctly indented
+- [x] Minified XML is valid and parseable
 
 ### EPIC-2.5: TOML/CSV Utility Operations
 
