@@ -1,0 +1,29 @@
+# Rust build artifacts
+target/
+
+# Node
+node_modules/
+
+# WASM artifacts
+*.wasm
+
+# Jujutsu VCS
+.jj/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+*.swp
+*.swo
+*~
+
+# Obsidian (track app.json and graph.json, ignore the rest)
+.vault/.obsidian/workspace.json
+.vault/.obsidian/workspace-mobile.json
+.vault/.obsidian/hotkeys.json
+.vault/.obsidian/community-plugins.json
+.vault/.obsidian/core-plugins.json
+.vault/.obsidian/core-plugins-migration.json
+.vault/.obsidian/plugins/

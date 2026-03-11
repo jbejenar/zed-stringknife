@@ -47,12 +47,12 @@ no side effects, no shared state.
 
 | Checkpoint | Phase | Composite Target | Gate |
 |-----------|-------|-------------------|------|
-| ARI-BASELINE | 0 | Establish baseline | N/A |
-| ARI-0 | 0 exit | >= 7.0 | Phase gate |
-| ARI-1 | 1 exit | >= 7.5 | Phase gate |
-| ARI-2 | 2 exit | >= 8.0 | Phase gate |
-| ARI-3 | 3 exit | >= 8.5 | Phase gate |
-| ARI-4 | 4 exit | >= 9.0 | Release gate |
+| ARI-BASELINE | 0 | Establish baseline | N/A (actual: 59/100) |
+| ARI-0 | 0 exit | >= 70/100 | Phase gate |
+| ARI-1 | 1 exit | >= 75/100 | Phase gate |
+| ARI-2 | 2 exit | >= 80/100 | Phase gate |
+| ARI-3 | 3 exit | >= 85/100 | Phase gate |
+| ARI-4 | 4 exit | >= 90/100 | Release gate |
 
 ## Key Constraints (hard rules)
 

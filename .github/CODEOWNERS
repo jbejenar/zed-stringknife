@@ -1,0 +1,16 @@
+# Default owner for everything
+* @jbejenar
+
+# Core transform engine — changes here affect all transforms
+/stringknife-core/ @jbejenar
+
+# LSP server — protocol-sensitive
+/stringknife-lsp/ @jbejenar
+
+# Extension manifest and WASM shim
+/extension.toml @jbejenar
+/src/lib.rs @jbejenar
+
+# CI/CD and security configuration
+/.github/ @jbejenar
+/deny.toml @jbejenar
