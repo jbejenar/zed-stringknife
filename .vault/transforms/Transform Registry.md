@@ -36,6 +36,7 @@ tags: [transform]
 | json_unescape | json | Done | (incl.) | T-223 |
 | xml_pretty_print | xml | Done | 22 | T-230 |
 | xml_minify | xml | Done | (incl.) | T-231 |
+| csv_to_json | csv | Done | 11 | T-242 |
 | jwt_decode_header | jwt | Done | 15 | T-210 |
 | jwt_decode_payload | jwt | Done | (incl.) | T-211 |
 | jwt_decode_full | jwt | Done | (incl.) | T-212 |

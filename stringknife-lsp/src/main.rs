@@ -14,7 +14,9 @@ use tower_lsp::lsp_types::{
 use tower_lsp::{Client, LanguageServer, LspService, Server};
 
 use stringknife_core::detect::{detect_encodings, DetectedEncoding};
-use stringknife_core::transforms::{base64, hash, hex, html, json, jwt, misc, unicode, url, xml};
+use stringknife_core::transforms::{
+    base64, csv, hash, hex, html, json, jwt, misc, unicode, url, xml,
+};
 
 /// Document store: maps document URIs to their full text content.
 struct DocumentStore {
@@ -253,6 +255,9 @@ fn build_actions(uri: &Url, range: Range, selected: &str) -> Vec<CodeActionOrCom
         xml::xml_pretty_print(selected),
     );
     try_encode("StringKnife: XML Minify", xml::xml_minify(selected));
+
+    // --- CSV actions (always shown) ---
+    try_encode("StringKnife: CSV → JSON Array", csv::csv_to_json(selected));
 
     // --- Hash actions (one-way, always shown) ---
     try_encode("StringKnife: MD5 Hash", hash::md5(selected));
