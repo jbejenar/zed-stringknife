@@ -2506,6 +2506,26 @@ Implement gzip and deflate compression/decompression with Base64 encoding for te
   - **Priority:** Low | **Impact:** Medium | **Effort:** Small | **Risk:** Low
   - **Status:** Not Started
   - **Notes:** ariscan P6 (Build Determinism & Type Safety) scored 50/100. It checks for `tsconfig.json strict` mode (not applicable to Rust). Rust's type system + Clippy pedantic lints provide equivalent safety. This may need an ariscan enhancement for Rust ecosystem detection.
+- [ ] **B-019** — Action registry pattern for `build_actions()` — replace flat list with declarative registration
+  - **Priority:** Low | **Impact:** Medium | **Effort:** Medium | **Risk:** Low
+  - **Status:** Not Started
+  - **Notes:** `build_actions()` is ~200 lines / 64 actions. A registry macro or builder could reduce boilerplate if we add 20+ more actions in Phase 4+. Not urgent — flat list is still readable.
+- [ ] **B-020** — YAML parser (hand-implemented or `serde_yaml`) for JSON↔YAML (T-224/T-225)
+  - **Priority:** Medium | **Impact:** High | **Effort:** High | **Risk:** Medium
+  - **Status:** Not Started
+  - **Notes:** Hand-implementing YAML is non-trivial (spec is complex). `serde_yaml` adds ~5 crates. Decision needed: dep budget vs implementation effort.
+- [ ] **B-021** — TOML parser (hand-implemented or `toml` crate) for TOML↔JSON (T-240/T-241)
+  - **Priority:** Medium | **Impact:** Medium | **Effort:** Medium | **Risk:** Low
+  - **Status:** Not Started
+  - **Notes:** TOML spec is simpler than YAML. Could hand-implement a basic parser or use `toml` crate (~5 crates). Budget has ~71 crates of headroom.
+- [ ] **B-022** — Notification API for inspect actions instead of text replacement
+  - **Priority:** Medium | **Impact:** High | **Effort:** Small | **Risk:** Low
+  - **Status:** Not Started
+  - **Notes:** Currently inspect actions (count_chars, byte_length, detect_encoding) replace selected text with stats. Ideally use Zed notification/diagnostic API when available. Blocked on Zed extension API capabilities.
+- [ ] **B-023** — Fuzz testing setup with `cargo-fuzz` for decode/parse functions
+  - **Priority:** Medium | **Impact:** High | **Effort:** Medium | **Risk:** Low
+  - **Status:** Not Started
+  - **Notes:** Deferred from A-021. Targets: base64_decode, url_decode, json_pretty_print, xml_pretty_print. Needs nightly toolchain + Linux CI.
 
 ---
 
