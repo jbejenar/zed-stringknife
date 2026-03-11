@@ -939,17 +939,17 @@ Set up GitHub Actions workflows for continuous integration (build, test, lint, a
   - [x] Run `cargo fmt --check`
   - [x] Run `cargo deny check` (license + advisory)
   - [x] Run `cargo audit` (security)
-  - [ ] Run `ariscan` and output ARI score summary *(deferred — requires ariscan tool)*
+  - [x] Run `ariscan` and output ARI score summary — via separate `ariscan.yml` workflow
 - [x] **T-022** — Create `.github/workflows/release.yml`
   - [x] Trigger on Git tag `v*`
   - [x] Cross-compile LSP binary for `x86_64-apple-darwin`, `aarch64-apple-darwin`, `x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-gnu`, `x86_64-pc-windows-msvc`
   - [x] Upload binaries as GitHub Release assets
   - [x] Generate checksums (SHA256)
-- [ ] **T-023** — Create `.github/workflows/ariscan.yml` *(deferred — requires ariscan tool)*
-  - [ ] Run `ariscan` on every PR
-  - [ ] Post ARI score as PR comment (per-pillar breakdown)
-  - [ ] Fail PR if any pillar drops below its phase target threshold
-  - [ ] Cache previous score for delta comparison
+- [x] **T-023** — Create `.github/workflows/ariscan.yml`
+  - [x] Run `ariscan` on every PR (clones prontiq-ariscan, builds, scans)
+  - [x] Post ARI score as PR comment (per-pillar breakdown with delta)
+  - [ ] Fail PR if any pillar drops below its phase target threshold *(deferred — needs gate logic)*
+  - [x] Cache previous score for delta comparison (scans base branch for diff)
 - [x] **T-024** — Add Dependabot config for Cargo dependency updates
 - [x] **T-036** — Configure branch protection rules on `main`
   - [x] Require 1 approving PR review
@@ -973,7 +973,7 @@ Set up GitHub Actions workflows for continuous integration (build, test, lint, a
 
 - [x] Push to `main` triggers CI workflow and all steps pass — confirmed via PR #3 merge
 - [ ] Tagging `v0.0.1-test` triggers release workflow and produces binaries for all 5 targets *(not yet tested)*
-- [ ] Opening a PR triggers ariscan workflow and posts ARI score comment *(T-023 deferred)*
+- [x] Opening a PR triggers ariscan workflow and posts ARI score comment
 - [x] Dependabot opens a PR within 7 days for any outdated dependency — confirmed (actions/checkout, upload/download-artifact PRs opened)
 - [x] Direct push to `main` is rejected by branch protection — confirmed
 - [x] PR without passing CI checks cannot be merged — confirmed (PR #3 required fix before merge)
