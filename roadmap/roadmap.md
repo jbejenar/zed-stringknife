@@ -537,6 +537,78 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
 
 ---
 
+## PR & CI Gate Policy
+
+All code changes enter the repository through Pull Requests. The following gates must pass before any PR can be merged.
+
+### Required CI Checks (GitHub Actions)
+
+Every PR triggers the CI pipeline (`.github/workflows/ci.yml`). **All checks are required — no merge without green.**
+
+| Check | Command | Blocking | Phase Introduced |
+|-------|---------|----------|-----------------|
+| **Build (WASM)** | `cargo check -p stringknife-ext --target wasm32-wasip1` | Yes | Phase 0 |
+| **Build (LSP)** | `cargo check -p stringknife-lsp` | Yes | Phase 0 |
+| **Unit Tests** | `cargo test --workspace` | Yes | Phase 0 |
+| **Lint (Clippy)** | `cargo clippy --workspace -- -D warnings` | Yes | Phase 0 |
+| **Format** | `cargo fmt --all -- --check` | Yes | Phase 0 |
+| **License/Advisory** | `cargo deny check` | Yes | Phase 0 |
+| **Security Audit** | `cargo audit` | Yes | Phase 0 |
+| **ARI Score** | `ariscan --format pr-comment` | Advisory (Phase 0–1), Blocking (Phase 2+) | Phase 0 |
+| **ARI Regression** | `ariscan --diff main` | Blocking (Phase 2+) | Phase 2 |
+| **Integration Tests** | `cargo test --test integration` | Yes (Phase 1+) | Phase 1 |
+| **Benchmark Regression** | `cargo bench -- --compare main` | Advisory | Phase 4 |
+
+### Branch Protection Rules
+
+Branch protection is configured on `main` from Phase 0 onward.
+
+- [ ] **Require PR reviews:** Minimum 1 approving review before merge
+- [ ] **Require status checks:** All CI checks listed above must pass
+- [ ] **Require branch up-to-date:** PR branch must be rebased on latest `main`
+- [ ] **No direct pushes to `main`:** All changes go through PRs (including maintainer)
+- [ ] **Require linear history:** Squash merge or rebase merge only — no merge commits
+- [ ] **Require signed commits:** All commits must be GPG or SSH signed (Phase 2+)
+- [ ] **Dismiss stale reviews:** Approvals dismissed when new commits are pushed
+- [ ] **Require conversation resolution:** All review comments must be resolved before merge
+
+### PR Process Checklist
+
+Every PR must include the following before requesting review:
+
+- [ ] **Title** follows conventional commit format: `feat:`, `fix:`, `refactor:`, `docs:`, `test:`, `chore:`
+- [ ] **Description** explains *what* changed and *why*
+- [ ] **Tests** — new/modified code has corresponding unit tests
+- [ ] **No `unsafe`** in `transforms/` crate (enforced by Clippy deny)
+- [ ] **No new dependencies** without justification in PR description and `cargo-deny` approval
+- [ ] **ARI score** does not regress below phase threshold
+- [ ] **Documentation** updated if public API changed (README feature table, rustdoc)
+- [ ] **Breaking changes** flagged with `BREAKING:` prefix in commit message
+
+### PR Labels & Automation
+
+| Label | Trigger | Action |
+|-------|---------|--------|
+| `ci:passed` | All CI checks green | Auto-applied by GitHub Actions |
+| `ari:regression` | ARI score decreased | Blocks merge, notifies maintainer |
+| `ari:improvement` | ARI score increased | Informational — shown in PR comment |
+| `needs-review` | PR opened/updated | Auto-applied, removed on approval |
+| `size/S`, `size/M`, `size/L`, `size/XL` | Lines changed | Auto-applied by size labeler |
+| `phase-N` | Files changed in phase scope | Auto-applied by path labeler |
+
+### CI Gate Escalation by Phase
+
+CI strictness increases as the project matures:
+
+| Phase | ARI Blocking | Benchmark Gate | Coverage Gate |
+|-------|-------------|----------------|---------------|
+| **0–1** | Advisory only | None | None |
+| **2–3** | Pillar scores ≥ phase target | Advisory | ≥ 70% on `transforms/` |
+| **4** | Pillar scores ≥ phase target | Warn on >10% regression | ≥ 80% on `transforms/` |
+| **5–6** | Pillar scores ≥ phase target | Block on >20% regression | ≥ 85% on `transforms/` |
+
+---
+
 ## Phase 0 — Project Bootstrap
 
 > **Goal:** Repository scaffolded, CI green, dev extension installable in Zed with a single no-op code action proving the full pipeline works end-to-end. ARI foundations laid from first commit.
@@ -727,6 +799,23 @@ Set up GitHub Actions workflows for continuous integration (build, test, lint, a
   - [ ] Fail PR if any pillar drops below its phase target threshold
   - [ ] Cache previous score for delta comparison
 - [ ] **T-024** — Add Dependabot config for Cargo dependency updates
+- [ ] **T-036** — Configure branch protection rules on `main`
+  - [ ] Require 1 approving PR review
+  - [ ] Require all CI status checks to pass
+  - [ ] Require branch to be up-to-date before merge
+  - [ ] Enforce squash merge (linear history)
+  - [ ] Disable direct pushes to `main`
+  - [ ] Enable dismiss stale reviews on new pushes
+  - [ ] Require conversation resolution before merge
+- [ ] **T-037** — Create `.github/pull_request_template.md`
+  - [ ] Include PR checklist (tests, no unsafe, docs updated, ARI check)
+  - [ ] Include conventional commit format guidance
+  - [ ] Include breaking change flag instructions
+- [ ] **T-038** — Create `.github/workflows/pr-labeler.yml`
+  - [ ] Auto-label PRs by size (S/M/L/XL)
+  - [ ] Auto-label PRs by phase scope based on changed file paths
+  - [ ] Apply `needs-review` label on PR open
+- [ ] **T-039** — Add merge queue configuration (optional, enabled when contributor count > 1)
 
 #### Verification
 
@@ -734,6 +823,10 @@ Set up GitHub Actions workflows for continuous integration (build, test, lint, a
 - [ ] Tagging `v0.0.1-test` triggers release workflow and produces binaries for all 5 targets
 - [ ] Opening a PR triggers ariscan workflow and posts ARI score comment
 - [ ] Dependabot opens a PR within 7 days for any outdated dependency
+- [ ] Direct push to `main` is rejected by branch protection
+- [ ] PR without passing CI checks cannot be merged
+- [ ] PR template renders correctly when opening a new PR
+- [ ] PR labels are automatically applied based on size and scope
 
 ### 🔒 GATE: ARI-0 Checkpoint
 
@@ -798,7 +891,7 @@ Set up GitHub Actions workflows for continuous integration (build, test, lint, a
 - [ ] `docs/pm-reviews/PMR-0.md` committed with Go/No-Go decision and evidence basis
 - [ ] Phase 1 scope confirmed or adjusted based on review
 
-**Phase 0 Exit Criteria:** Dev extension installs in Zed. Selecting text → right-click → "StringKnife: Reverse String" works. CI is green. ARI ≥ 7.0. PMR-0 complete.
+**Phase 0 Exit Criteria:** Dev extension installs in Zed. Selecting text → right-click → "StringKnife: Reverse String" works. CI is green. Branch protection active on `main`. All PRs pass required CI checks. ARI ≥ 7.0. PMR-0 complete.
 
 ---
 
@@ -1062,7 +1155,7 @@ Implement the smart detection system that surfaces relevant decode actions based
 - [ ] `cargo clippy -- -D warnings` passes
 - [ ] Test coverage ≥ 80% on `transforms/` confirmed
 
-**Phase 1 Exit Criteria:** All encoding/decoding actions work. Smart detection suggests relevant decode operations. Full unit test coverage. ARI ≥ 7.5. PMR-1 complete.
+**Phase 1 Exit Criteria:** All encoding/decoding actions work. Smart detection suggests relevant decode operations. Full unit test coverage. All CI checks pass on every PR. Integration tests added to CI pipeline. ARI ≥ 7.5. PMR-1 complete.
 
 ---
 
@@ -1311,7 +1404,7 @@ Implement cross-format conversions: TOML ↔ JSON and CSV → JSON Array. These 
 - [ ] `docs/pm-reviews/PMR-2.md` committed with velocity analysis and Phase 3 scope decisions
 - [ ] Backlog items reviewed and promotion decisions documented
 
-**Phase 2 Exit Criteria:** All hash, JWT, and format conversion operations functional. Error handling is graceful across all actions. Architecture audit passed. Security audit passed.
+**Phase 2 Exit Criteria:** All hash, JWT, and format conversion operations functional. Error handling is graceful across all actions. ARI score blocking enabled on PRs. Signed commits required. Architecture audit passed. Security audit passed. Test coverage ≥ 70% on `transforms/`.
 
 ---
 
@@ -1518,7 +1611,7 @@ Implement escape and unescape operations for common contexts: backslashes, regex
 - [ ] Code action count documented — is it manageable or overwhelming?
 - [ ] Error message clarity validated by non-expert developer
 
-**Phase 3 Exit Criteria:** All case, whitespace, and escape operations functional. Inspection actions return info without modifying text. ARI ≥ 8.0. UX audit complete.
+**Phase 3 Exit Criteria:** All case, whitespace, and escape operations functional. Inspection actions return info without modifying text. ARI ≥ 8.0. UX audit complete. Test coverage ≥ 70% on `transforms/`.
 
 ---
 
@@ -1701,7 +1794,7 @@ Enable code actions to work with multiple cursor selections simultaneously, retu
 - [ ] README reviewed and updated for store-readiness
 - [ ] Demo assets created and reviewed
 
-**Phase 4 Exit Criteria:** Extension is configurable, performant on large inputs, handles errors gracefully, and supports multi-cursor. Architecture audit passed. Pre-launch scope locked.
+**Phase 4 Exit Criteria:** Extension is configurable, performant on large inputs, handles errors gracefully, and supports multi-cursor. Benchmark regression gate active on PRs. Test coverage ≥ 80% on `transforms/`. Architecture audit passed. Pre-launch scope locked.
 
 ---
 
@@ -1874,7 +1967,7 @@ Set up community infrastructure: issue templates, GitHub Discussions, automated 
 - [ ] Time-to-first-encode < 30 seconds confirmed
 - [ ] No performance degradation on 10K+ line files
 
-**Phase 5 Exit Criteria:** Extension live in Zed Extension Store. Installable by any Zed user. ARI ≥ 8.5. Both security and UX audits passed. Community contribution pipeline in place.
+**Phase 5 Exit Criteria:** Extension live in Zed Extension Store. Installable by any Zed user. ARI ≥ 8.5. Benchmark regression blocks merge (>20% regression). Test coverage ≥ 85% on `transforms/`. Both security and UX audits passed. Community contribution pipeline in place.
 
 ---
 
@@ -2161,7 +2254,7 @@ Implement gzip and deflate compression/decompression with Base64 encoding for te
 - [ ] Semver policy documented if shipping v1.0
 - [ ] All blocking audit findings resolved
 
-**Phase 6 Exit Criteria:** Advanced features driven by community demand. ARI ≥ 9.0. Full audit suite passed. v1.0 decision made.
+**Phase 6 Exit Criteria:** Advanced features driven by community demand. ARI ≥ 9.0. All CI gates at maximum strictness. Test coverage ≥ 85% on `transforms/`. Full audit suite passed. v1.0 decision made.
 
 ---
 
