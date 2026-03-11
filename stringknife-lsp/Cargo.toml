@@ -1,0 +1,24 @@
+[[bin]]
+name = "stringknife-lsp"
+path = "src/main.rs"
+
+[package]
+name = "stringknife-lsp"
+version = "0.0.1"
+edition = "2021"
+license = "MIT"
+description = "Language Server for StringKnife string transformations"
+publish = false
+
+[dependencies]
+stringknife-core = { path = "../stringknife-core" }
+tower-lsp = "0.20.0"
+tokio = { version = "1.43.0", features = ["macros", "rt-multi-thread", "io-std"] }
+serde = { version = "1.0.217", features = ["derive"] }
+serde_json = "1.0.138"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+unwrap_used = "deny"
+panic = "deny"
