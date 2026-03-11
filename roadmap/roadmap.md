@@ -312,6 +312,38 @@ zed-stringknife/
 │       ├── compress.rs         # Gzip/Deflate ↔ Base64
 │       └── misc.rs             # Reverse string, other one-offs
 │
+├── CLAUDE.md                  # Agent entry point — read this first
+├── .claude/
+│   └── skills/
+│       └── vault-interaction/
+│           └── SKILL.md       # Vault interaction protocol for Claude Code
+│
+├── .vault/                    # Obsidian-compatible knowledge vault
+│   ├── .obsidian/
+│   │   ├── app.json           # Obsidian settings (tracked)
+│   │   └── graph.json         # Graph view colour groups (tracked)
+│   ├── Home.md                # Master index — all sections within 2 hops
+│   ├── README.md              # How to open as Obsidian vault
+│   ├── architecture/          # Architecture Decision Records
+│   │   └── System Context.md
+│   ├── ari/                   # ARI pillar tracking
+│   │   ├── ARI Dashboard.md
+│   │   └── [per-pillar notes]
+│   ├── sessions/              # Agent session continuity
+│   │   ├── Session Log.md
+│   │   └── NEXT-SESSION.md
+│   ├── patterns/              # Codebase patterns & agent guides
+│   │   ├── Adding a New Transform.md
+│   │   ├── Gotchas.md
+│   │   └── Dependency Budget.md
+│   ├── transforms/            # Transform registry
+│   │   └── Transform Registry.md
+│   ├── pm-reviews/            # PM Review index
+│   ├── audits/                # Audit index
+│   └── templates/             # Session & ARI checkpoint templates
+│       ├── Session Template.md
+│       └── ARI Checkpoint Template.md
+│
 ├── docs/
 │   ├── ari/                    # ARI checkpoint reports
 │   │   ├── ARI-BASELINE.md
@@ -477,7 +509,7 @@ This repository is built agent-first from commit zero. **Prontiq's `ariscan` CLI
 | 2 | **Build Determinism** | ≥ 8 | ≥ 9 | `rust-toolchain.toml` pins channel. `Cargo.lock` committed. Reproducible WASM + binary builds. |
 | 3 | **Type Safety** | ≥ 9 | ≥ 9 | Rust. Enough said. Strict clippy lints, no `unwrap()` in library code. |
 | 4 | **Modular Coherence** | ≥ 7 | ≥ 9 | Each transform is a standalone pure function in its own module. LSP wiring is separate from logic. |
-| 5 | **Documentation Density** | ≥ 6 | ≥ 8 | HINTS.md, CONTRIBUTING.md, inline rustdoc on all public APIs. LCI-compatible doc structure. |
+| 5 | **Documentation Density** | ≥ 6 | ≥ 8 | `.vault/` provides graph-navigable knowledge base with structured notes covering architecture, patterns, ARI tracking, and session continuity. HINTS.md, CONTRIBUTING.md, inline rustdoc on all public APIs. LCI-compatible doc structure. |
 | 6 | **Dependency Transparency** | ≥ 8 | ≥ 9 | Minimal deps. `cargo-deny` for license/advisory audit. No transitive wildcards. |
 | 7 | **Error Explicitness** | ≥ 8 | ≥ 9 | All transforms return `Result<T, E>` with structured error types. No panics. No silent failures. |
 | 8 | **Security (Gate)** | Pass | Pass | `cargo-audit` in CI. No `unsafe`. No network calls. No file system access in transforms. |
@@ -639,7 +671,7 @@ Establish the foundational repository structure, Zed extension manifest, and WAS
   - [ ] Implement `language_server_initialization_options()` returning empty config
   - [ ] Call `register_extension!` macro
 - [ ] **T-005** — Add `LICENSE` (MIT) at repository root
-- [ ] **T-006** — Create `.gitignore` (target/, node_modules/, *.wasm)
+- [ ] **T-006** — Create `.gitignore` (target/, node_modules/, *.wasm, .jj/)
 - [ ] **T-007** — Create `README.md` with project overview, installation instructions, and feature list placeholder
 - [ ] **T-008** — Create `CHANGELOG.md` with `## [Unreleased]` section
 - [ ] **T-009** — Create `CONTRIBUTING.md` with dev setup instructions
@@ -649,14 +681,134 @@ Establish the foundational repository structure, Zed extension manifest, and WAS
 - [ ] `cargo check` passes on the WASM crate without errors
 - [ ] `extension.toml` validates against Zed's extension schema
 - [ ] All files listed above exist at repository root
-- [ ] `.gitignore` excludes `target/`, `node_modules/`, `*.wasm`
+- [ ] `.gitignore` excludes `target/`, `node_modules/`, `*.wasm`, `.jj/`
+
+### EPIC-0.1A: Codebase Intelligence Vault (Persistent Agent Memory)
+
+**Priority:** Critical | **Impact:** Very High | **Effort:** Medium | **Risk:** Low
+**Source:** Roadmap Amendment — Codebase Intelligence Vault
+**Status:** Not Started
+**Dependencies:** EPIC-0.1
+**AI-first benefit:** Graph-navigable, frontmatter-queryable knowledge base compounds with every coding session. Agents read it for context, write to it for continuity, and ariscan output lands in it for longitudinal tracking.
+
+> The `.vault/` directory is an Obsidian-compatible knowledge vault that serves as
+> the persistent memory layer for AI-agent sessions. It replaces flat documentation
+> with a graph-navigable, frontmatter-queryable knowledge base that compounds with
+> every coding session. Agents read it for context, write to it for continuity, and
+> ariscan output lands in it for longitudinal tracking.
+
+#### Definition of Done
+
+- [ ] **T-655** — Create `CLAUDE.md` at repository root
+  - [ ] 30-second architecture summary (under 80 lines)
+  - [ ] Link to `.vault/sessions/NEXT-SESSION.md` as the agent session entry point
+  - [ ] File map table: path → what it is → when to read it
+  - [ ] ARI gate thresholds table (one row per checkpoint)
+  - [ ] Key constraints checklist (project-specific hard rules agents must not violate)
+
+- [ ] **T-656** — Create `.vault/` directory structure and Obsidian config
+  - [ ] `.vault/.obsidian/app.json` — source mode, frontmatter visible, line numbers on
+  - [ ] `.vault/.obsidian/graph.json` — colour groups by tag: `#ari-pillar`, `#session`,
+        `#pattern`, `#adr`, `#audit`, `#transform`
+  - [ ] `.vault/Home.md` — master index with wikilink navigation to all vault sections
+  - [ ] `.vault/README.md` — how to open as Obsidian vault, agent protocol summary,
+        ariscan integration notes
+
+- [ ] **T-657** — Create `.vault/architecture/` — Architecture Decision Records
+  - [ ] One ADR per major architectural decision, using frontmatter:
+        `type: adr`, `status: accepted|proposed|deprecated`, `tags: [adr, architecture]`
+  - [ ] Each ADR includes: status, context, decision, alternatives rejected, consequences,
+        linked notes via wikilinks
+  - [ ] `System Context.md` — component summary, data flow, links to ADRs
+  - [ ] Migrate any existing ADRs from flat `docs/` into vault format with frontmatter
+
+- [ ] **T-658** — Create `.vault/ari/` — ARI Pillar Tracking
+  - [ ] `ARI Dashboard.md` — composite score trajectory table (one row per checkpoint),
+        per-pillar score table, remediation queue section, links to checkpoint notes
+  - [ ] One note per ARI pillar (8 total), each with frontmatter fields:
+        `pillar_number`, `current_score`, `target_phase0`, `target_v1`, `weight`
+  - [ ] Each pillar note includes: definition, project-specific strategy,
+        "what good looks like" checklist, current findings section, linked notes
+  - [ ] Weight distribution per empirical research: Test Isolation + Build Determinism +
+        Type Safety at `above-equal`; Security Gate as binary `gate`; remainder at `equal`
+  - [ ] Migrate any existing `docs/ari/` content into vault notes
+
+- [ ] **T-659** — Create `.vault/sessions/` — Agent Session Infrastructure
+  - [ ] `Session Log.md` — chronological table: session #, date, agent, focus, outcome, link
+  - [ ] `NEXT-SESSION.md` — frontmatter: `current_phase`, `current_ticket`, `blocked_by`;
+        sections: current state, what last agent did, what next agent should do,
+        files to read first, environment notes
+  - [ ] Convention documented: agents create a session note on end, update NEXT-SESSION.md,
+        add row to Session Log
+
+- [ ] **T-660** — Create `.vault/patterns/` — Codebase Patterns & Agent Guides
+  - [ ] `Adding a New Transform.md` — step-by-step with code templates and anti-patterns
+  - [ ] `Gotchas.md` — "don't touch this, it's deliberate" annotations. Architectural
+        constraints that look like bugs. Intentional trade-offs.
+  - [ ] `Dependency Budget.md` — hard rules on what can be added, version policies,
+        approved libraries, process for adding new dependencies.
+  - [ ] All pattern notes tagged `#pattern` with `type: pattern` in frontmatter
+
+- [ ] **T-661** — Create `.vault/transforms/` — Transform Registry
+  - [ ] `Transform Registry.md` — registry tracking all transforms with columns:
+        Name, Module/File, Status, Tests, Ticket
+  - [ ] Pre-populate from roadmap tickets where possible
+  - [ ] Convention: update status to ✅ on implementation, add test count and commit SHA
+
+- [ ] **T-662** — Create `.vault/pm-reviews/` and `.vault/audits/` indexes
+  - [ ] `PM Reviews.md` — indexed table of all PM reviews with phase gate, status, link
+  - [ ] `Audit Index.md` — tables for each audit series (code quality, security,
+        architecture, dependency, UX)
+  - [ ] Migrate any existing `docs/pm-reviews/` and `docs/audits/` references
+
+- [ ] **T-663** — Create `.vault/templates/`
+  - [ ] `Session Template.md` — frontmatter: session_number, agent, phase,
+        tickets_attempted/completed/blocked; sections: objective, tickets worked,
+        decisions made, gotchas discovered, ARI impact, handoff to next session
+  - [ ] `ARI Checkpoint Template.md` — frontmatter: checkpoint, composite_score,
+        gate_threshold, gate_passed; sections: per-pillar scores with delta from
+        previous, remediation items
+
+- [ ] **T-664** — Create `.claude/skills/vault-interaction/SKILL.md`
+  - [ ] Session start protocol (what to read, in what order)
+  - [ ] Frontmatter as structured data (explain the YAML contract)
+  - [ ] Wikilinks as navigation (explain `[[Note Name]]` convention)
+  - [ ] Session end protocol (create note, update handoff, update registry)
+  - [ ] Full `.vault/` file structure reference
+
+- [ ] **T-665** — Update `.gitignore` for vault
+  - [ ] Track: `.vault/.obsidian/app.json`, `.vault/.obsidian/graph.json`
+  - [ ] Ignore: `.vault/.obsidian/workspace.json`, `workspace-mobile.json`,
+        `hotkeys.json`, `community-plugins.json`, `core-plugins.json`,
+        `core-plugins-migration.json`, `plugins/`
+
+- [ ] **T-666** — Update `HINTS.md` to reference vault
+  - [ ] Add "Vault Maintenance" section: agents must update session state (not optional)
+  - [ ] Add "ARI Dashboard is manually updated" note (human review required at this stage)
+  - [ ] Add project-specific intentional suppressions
+
+- [ ] **T-667** — Verify vault graph connectivity
+  - [ ] Open `.vault/` as Obsidian vault — confirm graph view renders with colour-coded nodes
+  - [ ] Confirm all wikilinks resolve (no broken `[[...]]` references)
+  - [ ] Confirm `Home.md` reaches every section within 2 hops
+  - [ ] Confirm frontmatter renders correctly in Obsidian's properties view
+
+#### Verification
+
+- [ ] `.vault/` opens as Obsidian vault with connected graph and colour-coded nodes
+- [ ] All wikilinks resolve (no broken `[[...]]` references)
+- [ ] `CLAUDE.md` contains architecture summary, file map, ARI gates, and vault protocol
+- [ ] `HINTS.md` references vault maintenance convention
+- [ ] `.gitignore` correctly tracks/ignores Obsidian config files
+- [ ] `Home.md` reaches every vault section within 2 hops
+- [ ] Frontmatter renders correctly in Obsidian's properties view
 
 ### EPIC-0.2: ARI Foundations (Agent-Readiness from Day One)
 
 **Priority:** Critical | **Impact:** Very High | **Effort:** Medium | **Risk:** Low
 **Source:** Product Roadmap v1 — Phase 0
 **Status:** Not Started
-**Dependencies:** EPIC-0.1
+**Dependencies:** EPIC-0.1, EPIC-0.1A
 **AI-first benefit:** ARI-first setup ensures agents can reason about, test, and contribute to the codebase from the earliest commits.
 
 Lay the agent-readiness infrastructure: HINTS.md for LCI-compatible context, strict Clippy lints, structured error types, the transforms module skeleton, and cargo-deny/cargo-audit integration. Establish the ARI baseline score.
@@ -891,7 +1043,7 @@ Set up GitHub Actions workflows for continuous integration (build, test, lint, a
 - [ ] `docs/pm-reviews/PMR-0.md` committed with Go/No-Go decision and evidence basis
 - [ ] Phase 1 scope confirmed or adjusted based on review
 
-**Phase 0 Exit Criteria:** Dev extension installs in Zed. Selecting text → right-click → "StringKnife: Reverse String" works. CI is green. Branch protection active on `main`. All PRs pass required CI checks. ARI ≥ 7.0. PMR-0 complete.
+**Phase 0 Exit Criteria:** Dev extension installs in Zed. Selecting text → right-click → "StringKnife: Reverse String" works. CI is green. Branch protection active on `main`. All PRs pass required CI checks. `.vault/` opens in Obsidian with connected graph, all wikilinks resolve, and NEXT-SESSION.md contains valid handoff state. ARI ≥ 7.0. PMR-0 complete.
 
 ---
 
@@ -2375,21 +2527,34 @@ Refer to the **Technical Architecture** section at the top of this document for 
 - **Three-layer separation:** WASM shim (Layer 1) → LSP router (Layer 2) → Transform engine (Layer 3). Arrows point downward only. `transforms/` has zero LSP dependencies.
 - **Pure function supremacy:** Every transform is `fn(&str) -> Result<String, StringKnifeError>`. No I/O, no side effects, no shared state.
 - **Rust everywhere:** Both the Zed WASM extension and the LSP binary are Rust. No Node.js runtime dependency.
+- **VCS:** Git is primary. [Jujutsu (jj)](https://github.com/martinvonz/jj) is supported as an optional colocated workflow — `.jj/` is gitignored. No repo-level jj config; contributors use their own `~/.jjconfig.toml`.
 - **Zero network, zero telemetry:** All operations are local, deterministic, and offline.
 - **Cross-platform binaries:** macOS (Intel + ARM), Linux (x86_64 + ARM), Windows (x86_64). No FFI, no system library links.
 - **Dependency budget:** < 150 transitive crates at v1.0. No `unsafe` in `transforms/`. All deps pass `cargo-deny`.
 - **Performance contract:** < 100ms for 100KB input. > 1MB returns `InputTooLarge` error.
 - **Agent-first:** Repository structure, test patterns, module boundaries, error types, and documentation designed for AI-agent consumption from commit zero. `ariscan` scores are a first-class engineering metric.
+- **Codebase intelligence vault:** `.vault/` is an Obsidian-compatible knowledge graph providing persistent agent memory, ARI pillar tracking, architecture decision records, session handoff continuity, and codebase pattern documentation. Frontmatter is the structured API; wikilinks are the navigation graph; plain markdown is the format contract.
 
 ---
 
 ## Document Trail
 
-| Directory | Contents |
-|-----------|----------|
-| `docs/ari/` | ARI checkpoint reports: ARI-BASELINE.md, ARI-0.md through ARI-4.md |
-| `docs/pm-reviews/` | PM review decision records: PMR-0.md through PMR-5.md |
-| `docs/audits/` | Audit reports: CODE-QUALITY-{N}.md, SECURITY-AUDIT-{N}.md, ARCH-AUDIT-{N}.md, DEP-AUDIT-{N}.md, UX-AUDIT-{N}.md |
+| Directory | Contents | Consumer |
+|-----------|----------|----------|
+| `CLAUDE.md` | Agent entry point — architecture summary, vault protocol, constraints | Agents (cold start) |
+| `HINTS.md` | Human overrides, suppressions, style rules, vault maintenance policy | Agents (before changes) |
+| `.vault/ari/` | ARI Dashboard, per-pillar notes, checkpoint reports | Agents + ariscan |
+| `.vault/architecture/` | ADRs, system context | Agents (before arch changes) |
+| `.vault/sessions/` | NEXT-SESSION.md handoff, Session Log, session notes | Agents (every session) |
+| `.vault/patterns/` | "How to add a transform", Gotchas, dependency constraints | Agents (before implementing) |
+| `.vault/transforms/` | Registry of all transforms with status | Agents (after implementing) |
+| `.vault/pm-reviews/` | PM Review index, decision records | PO + agents |
+| `.vault/audits/` | Audit index — all audit series | PO + agents |
+| `.vault/templates/` | Session Template, ARI Checkpoint Template | Agents (creating notes) |
+| `.claude/skills/` | Vault interaction skill for Claude Code | Claude Code agents |
+| `docs/ari/` | ARI checkpoint reports: ARI-BASELINE.md, ARI-0.md through ARI-4.md | Historical reference |
+| `docs/pm-reviews/` | PM review decision records: PMR-0.md through PMR-5.md | Historical reference |
+| `docs/audits/` | Audit reports: CODE-QUALITY-{N}.md, SECURITY-AUDIT-{N}.md, ARCH-AUDIT-{N}.md, DEP-AUDIT-{N}.md, UX-AUDIT-{N}.md | Historical reference |
 
 ---
 
