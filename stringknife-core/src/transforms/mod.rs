@@ -6,6 +6,7 @@
 //! No I/O, no side effects, no LSP dependencies.
 
 pub mod base64;
+pub mod case;
 pub(crate) mod common;
 pub mod csv;
 pub mod hash;

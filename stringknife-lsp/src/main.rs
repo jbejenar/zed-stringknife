@@ -15,7 +15,7 @@ use tower_lsp::{Client, LanguageServer, LspService, Server};
 
 use stringknife_core::detect::{detect_encodings, DetectedEncoding};
 use stringknife_core::transforms::{
-    base64, csv, hash, hex, html, json, jwt, misc, unicode, url, xml,
+    base64, case, csv, hash, hex, html, json, jwt, misc, unicode, url, xml,
 };
 
 /// Document store: maps document URIs to their full text content.
@@ -233,6 +233,30 @@ fn build_actions(uri: &Url, range: Range, selected: &str) -> Vec<CodeActionOrCom
         "StringKnife: Reverse String",
         misc::reverse_string(selected),
     );
+
+    // --- Case conversion actions (always shown) ---
+    try_encode("StringKnife: To UPPERCASE", case::to_upper(selected));
+    try_encode("StringKnife: To lowercase", case::to_lower(selected));
+    try_encode("StringKnife: To Title Case", case::to_title_case(selected));
+    try_encode(
+        "StringKnife: To Sentence Case",
+        case::to_sentence_case(selected),
+    );
+    try_encode("StringKnife: To camelCase", case::to_camel_case(selected));
+    try_encode("StringKnife: To PascalCase", case::to_pascal_case(selected));
+    try_encode("StringKnife: To snake_case", case::to_snake_case(selected));
+    try_encode(
+        "StringKnife: To SCREAMING_SNAKE_CASE",
+        case::to_screaming_snake_case(selected),
+    );
+    try_encode("StringKnife: To kebab-case", case::to_kebab_case(selected));
+    try_encode("StringKnife: To dot.case", case::to_dot_case(selected));
+    try_encode("StringKnife: To path/case", case::to_path_case(selected));
+    try_encode(
+        "StringKnife: To CONSTANT_CASE",
+        case::to_constant_case(selected),
+    );
+    try_encode("StringKnife: Toggle Case", case::toggle_case(selected));
 
     // --- JSON actions (always shown) ---
     try_encode(
