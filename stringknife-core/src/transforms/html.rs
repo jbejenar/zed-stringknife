@@ -1,6 +1,9 @@
 //! HTML entity encoding and decoding transforms.
 
+use super::common::check_size;
 use crate::error::StringKnifeError;
+
+#[cfg(test)]
 use crate::MAX_INPUT_BYTES;
 
 /// Named HTML entities for the five special characters.
@@ -102,16 +105,6 @@ fn try_decode_entity(chars: &[char], start: usize) -> Option<(char, usize)> {
     }
 
     None
-}
-
-fn check_size(input: &str) -> Result<(), StringKnifeError> {
-    if input.len() > MAX_INPUT_BYTES {
-        return Err(StringKnifeError::InputTooLarge {
-            max_bytes: MAX_INPUT_BYTES,
-            actual_bytes: input.len(),
-        });
-    }
-    Ok(())
 }
 
 #[cfg(test)]

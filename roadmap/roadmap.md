@@ -1298,11 +1298,11 @@ Implement the smart detection system that surfaces relevant decode actions based
 #### Definition of Done
 
 - [ ] **A-010** — Code Quality Audit
-  - [ ] Run `cargo clippy` — zero warnings
-  - [ ] Measure test coverage with `cargo-tarpaulin` — target ≥ 80% on `transforms/` module
-  - [ ] Check for code duplication across transform modules (extract shared patterns)
-  - [ ] Verify all public functions have rustdoc comments
-  - [ ] Document findings in `.vault/audits/CODE-QUALITY-1.md`
+  - [x] Run `cargo clippy` — zero warnings
+  - [ ] Measure test coverage with `cargo-tarpaulin` — target ≥ 80% on `transforms/` module *(blocked: tarpaulin Linux-only, needs CI)*
+  - [x] Check for code duplication across transform modules (extract shared patterns)
+  - [x] Verify all public functions have rustdoc comments
+  - [x] Document findings in `.vault/audits/CODE-QUALITY-1.md`
 
 #### Verification
 

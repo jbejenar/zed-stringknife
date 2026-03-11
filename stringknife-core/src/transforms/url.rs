@@ -1,6 +1,9 @@
 //! URL percent-encoding and decoding transforms (RFC 3986).
 
+use super::common::check_size;
 use crate::error::StringKnifeError;
+
+#[cfg(test)]
 use crate::MAX_INPUT_BYTES;
 
 /// Characters that are unreserved in RFC 3986 and never need encoding.
@@ -87,16 +90,6 @@ pub fn url_decode(input: &str) -> Result<String, StringKnifeError> {
 /// Returns [`StringKnifeError::InputTooLarge`] if input exceeds [`MAX_INPUT_BYTES`].
 pub fn url_encode_component(input: &str) -> Result<String, StringKnifeError> {
     url_encode(input)
-}
-
-fn check_size(input: &str) -> Result<(), StringKnifeError> {
-    if input.len() > MAX_INPUT_BYTES {
-        return Err(StringKnifeError::InputTooLarge {
-            max_bytes: MAX_INPUT_BYTES,
-            actual_bytes: input.len(),
-        });
-    }
-    Ok(())
 }
 
 fn hex_digit(nibble: u8) -> char {

@@ -4,7 +4,10 @@
 
 use std::fmt::Write;
 
+use super::common::check_size;
 use crate::error::StringKnifeError;
+
+#[cfg(test)]
 use crate::MAX_INPUT_BYTES;
 
 /// Escapes a string to Unicode escape sequences.
@@ -111,16 +114,6 @@ pub fn show_codepoints(input: &str) -> Result<String, StringKnifeError> {
         .map(|ch| format!("U+{:04X}", ch as u32))
         .collect();
     Ok(codepoints.join(" "))
-}
-
-fn check_size(input: &str) -> Result<(), StringKnifeError> {
-    if input.len() > MAX_INPUT_BYTES {
-        return Err(StringKnifeError::InputTooLarge {
-            max_bytes: MAX_INPUT_BYTES,
-            actual_bytes: input.len(),
-        });
-    }
-    Ok(())
 }
 
 fn parse_hex_codepoint(hex: &str) -> Option<char> {

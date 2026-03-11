@@ -1,6 +1,9 @@
 //! Hex encoding and decoding transforms.
 
+use super::common::check_size;
 use crate::error::StringKnifeError;
+
+#[cfg(test)]
 use crate::MAX_INPUT_BYTES;
 
 /// Encodes the input string's UTF-8 bytes as a lowercase hex string.
@@ -60,16 +63,6 @@ pub fn hex_decode(input: &str) -> Result<String, StringKnifeError> {
         operation: "hex_decode".to_string(),
         reason: "decoded bytes are not valid UTF-8".to_string(),
     })
-}
-
-fn check_size(input: &str) -> Result<(), StringKnifeError> {
-    if input.len() > MAX_INPUT_BYTES {
-        return Err(StringKnifeError::InputTooLarge {
-            max_bytes: MAX_INPUT_BYTES,
-            actual_bytes: input.len(),
-        });
-    }
-    Ok(())
 }
 
 fn hex_char(nibble: u8) -> char {
