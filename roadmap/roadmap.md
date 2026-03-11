@@ -671,7 +671,7 @@ Establish the foundational repository structure, Zed extension manifest, and WAS
   - [ ] Implement `language_server_initialization_options()` returning empty config
   - [ ] Call `register_extension!` macro
 - [ ] **T-005** — Add `LICENSE` (MIT) at repository root
-- [ ] **T-006** — Create `.gitignore` (target/, node_modules/, *.wasm)
+- [ ] **T-006** — Create `.gitignore` (target/, node_modules/, *.wasm, .jj/)
 - [ ] **T-007** — Create `README.md` with project overview, installation instructions, and feature list placeholder
 - [ ] **T-008** — Create `CHANGELOG.md` with `## [Unreleased]` section
 - [ ] **T-009** — Create `CONTRIBUTING.md` with dev setup instructions
@@ -681,7 +681,7 @@ Establish the foundational repository structure, Zed extension manifest, and WAS
 - [ ] `cargo check` passes on the WASM crate without errors
 - [ ] `extension.toml` validates against Zed's extension schema
 - [ ] All files listed above exist at repository root
-- [ ] `.gitignore` excludes `target/`, `node_modules/`, `*.wasm`
+- [ ] `.gitignore` excludes `target/`, `node_modules/`, `*.wasm`, `.jj/`
 
 ### EPIC-0.1A: Codebase Intelligence Vault (Persistent Agent Memory)
 
@@ -2527,6 +2527,7 @@ Refer to the **Technical Architecture** section at the top of this document for 
 - **Three-layer separation:** WASM shim (Layer 1) → LSP router (Layer 2) → Transform engine (Layer 3). Arrows point downward only. `transforms/` has zero LSP dependencies.
 - **Pure function supremacy:** Every transform is `fn(&str) -> Result<String, StringKnifeError>`. No I/O, no side effects, no shared state.
 - **Rust everywhere:** Both the Zed WASM extension and the LSP binary are Rust. No Node.js runtime dependency.
+- **VCS:** Git is primary. [Jujutsu (jj)](https://github.com/martinvonz/jj) is supported as an optional colocated workflow — `.jj/` is gitignored. No repo-level jj config; contributors use their own `~/.jjconfig.toml`.
 - **Zero network, zero telemetry:** All operations are local, deterministic, and offline.
 - **Cross-platform binaries:** macOS (Intel + ARM), Linux (x86_64 + ARM), Windows (x86_64). No FFI, no system library links.
 - **Dependency budget:** < 150 transitive crates at v1.0. No `unsafe` in `transforms/`. All deps pass `cargo-deny`.

@@ -53,6 +53,16 @@ This is not optional — it is a project requirement tracked by EPIC-0.1A.
 - Do not modify ARI scores without explicit human approval
 - `ariscan` output is the source of truth — dashboard reflects it, not the other way around
 
+## Version Control
+
+- **Git** is the primary VCS
+- **[Jujutsu (jj)](https://github.com/martinvonz/jj)** is supported as an optional colocated workflow
+  - Run `jj git init --colocate` in the repo root to enable
+  - `.jj/` is gitignored — no jj artifacts leak into git history
+  - No repo-level `.jjconfig.toml` — use your personal `~/.jjconfig.toml`
+  - jj's immutable commit model and automatic rebasing work well with agent workflows
+  - PRs still go through GitHub — use `jj git push` to push branches
+
 ## Branch Protection
 
 - `main` is protected — all changes via PR
