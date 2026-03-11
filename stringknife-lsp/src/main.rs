@@ -13,7 +13,7 @@ use tower_lsp::lsp_types::{
 };
 use tower_lsp::{Client, LanguageServer, LspService, Server};
 
-use stringknife_core::transforms::misc;
+use stringknife_core::transforms::{base64, hex, html, misc, unicode, url};
 
 /// Document store: maps document URIs to their full text content.
 struct DocumentStore {
@@ -116,17 +116,70 @@ impl LanguageServer for Backend {
 
         let mut actions = Vec::new();
 
-        // Reverse String
-        if let Ok(result) = misc::reverse_string(&selected) {
-            if result != selected {
-                actions.push(build_code_action(
-                    "StringKnife: Reverse String",
-                    uri.clone(),
-                    range,
-                    &result,
-                ));
-            }
-        }
+        // Helper: try a transform and add a code action if it produces a different result.
+        let mut try_action =
+            |title: &str,
+             result: std::result::Result<String, stringknife_core::StringKnifeError>| {
+                if let Ok(transformed) = result {
+                    if transformed != selected {
+                        actions.push(build_code_action(title, uri.clone(), range, &transformed));
+                    }
+                }
+            };
+
+        // Misc
+        try_action(
+            "StringKnife: Reverse String",
+            misc::reverse_string(&selected),
+        );
+
+        // Base64
+        try_action(
+            "StringKnife: Base64 Encode",
+            base64::base64_encode(&selected),
+        );
+        try_action(
+            "StringKnife: Base64 Decode",
+            base64::base64_decode(&selected),
+        );
+        try_action(
+            "StringKnife: Base64URL Encode",
+            base64::base64url_encode(&selected),
+        );
+        try_action(
+            "StringKnife: Base64URL Decode",
+            base64::base64url_decode(&selected),
+        );
+
+        // URL encoding
+        try_action("StringKnife: URL Encode", url::url_encode(&selected));
+        try_action("StringKnife: URL Decode", url::url_decode(&selected));
+        try_action(
+            "StringKnife: URL Encode (Component)",
+            url::url_encode_component(&selected),
+        );
+
+        // HTML entities
+        try_action("StringKnife: HTML Encode", html::html_encode(&selected));
+        try_action("StringKnife: HTML Decode", html::html_decode(&selected));
+
+        // Hex
+        try_action("StringKnife: Hex Encode", hex::hex_encode(&selected));
+        try_action("StringKnife: Hex Decode", hex::hex_decode(&selected));
+
+        // Unicode
+        try_action(
+            "StringKnife: Unicode Escape",
+            unicode::unicode_escape(&selected),
+        );
+        try_action(
+            "StringKnife: Unicode Unescape",
+            unicode::unicode_unescape(&selected),
+        );
+        try_action(
+            "StringKnife: Show Unicode Codepoints",
+            unicode::show_codepoints(&selected),
+        );
 
         Ok(Some(actions))
     }
