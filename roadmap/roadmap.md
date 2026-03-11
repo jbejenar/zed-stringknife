@@ -787,21 +787,21 @@ Establish the foundational repository structure, Zed extension manifest, and WAS
   - [x] Add "ARI Dashboard is manually updated" note (human review required at this stage)
   - [x] Add project-specific intentional suppressions
 
-- [ ] **T-667** — Verify vault graph connectivity *(requires human with Obsidian)*
+- [ ] **T-667** — Verify vault graph connectivity *(visual confirmation in Obsidian)*
   - [ ] Open `.vault/` as Obsidian vault — confirm graph view renders with colour-coded nodes
-  - [ ] Confirm all wikilinks resolve (no broken `[[...]]` references)
-  - [ ] Confirm `Home.md` reaches every section within 2 hops
+  - [x] Confirm all wikilinks resolve (no broken `[[...]]` references) — verified programmatically: 19 wikilinks, 0 broken
+  - [x] Confirm `Home.md` reaches every section within 2 hops — verified: all nodes reachable
   - [ ] Confirm frontmatter renders correctly in Obsidian's properties view
 
 #### Verification
 
-- [ ] `.vault/` opens as Obsidian vault with connected graph and colour-coded nodes
-- [ ] All wikilinks resolve (no broken `[[...]]` references)
-- [ ] `CLAUDE.md` contains architecture summary, file map, ARI gates, and vault protocol
-- [ ] `HINTS.md` references vault maintenance convention
-- [ ] `.gitignore` correctly tracks/ignores Obsidian config files
-- [ ] `Home.md` reaches every vault section within 2 hops
-- [ ] Frontmatter renders correctly in Obsidian's properties view
+- [ ] `.vault/` opens as Obsidian vault with connected graph and colour-coded nodes *(visual — Obsidian)*
+- [x] All wikilinks resolve (no broken `[[...]]` references) — 19 wikilinks verified
+- [x] `CLAUDE.md` contains architecture summary, file map, ARI gates, and vault protocol
+- [x] `HINTS.md` references vault maintenance convention
+- [x] `.gitignore` correctly tracks/ignores Obsidian config files
+- [x] `Home.md` reaches every vault section within 2 hops — verified programmatically
+- [ ] Frontmatter renders correctly in Obsidian's properties view *(visual — Obsidian)*
 
 ### EPIC-0.2: ARI Foundations (Agent-Readiness from Day One)
 
@@ -971,14 +971,14 @@ Set up GitHub Actions workflows for continuous integration (build, test, lint, a
 
 #### Verification
 
-- [ ] Push to `main` triggers CI workflow and all steps pass
-- [ ] Tagging `v0.0.1-test` triggers release workflow and produces binaries for all 5 targets
-- [ ] Opening a PR triggers ariscan workflow and posts ARI score comment
-- [ ] Dependabot opens a PR within 7 days for any outdated dependency
-- [ ] Direct push to `main` is rejected by branch protection
-- [ ] PR without passing CI checks cannot be merged
-- [ ] PR template renders correctly when opening a new PR
-- [ ] PR labels are automatically applied based on size and scope
+- [x] Push to `main` triggers CI workflow and all steps pass — confirmed via PR #3 merge
+- [ ] Tagging `v0.0.1-test` triggers release workflow and produces binaries for all 5 targets *(not yet tested)*
+- [ ] Opening a PR triggers ariscan workflow and posts ARI score comment *(T-023 deferred)*
+- [x] Dependabot opens a PR within 7 days for any outdated dependency — confirmed (actions/checkout, upload/download-artifact PRs opened)
+- [x] Direct push to `main` is rejected by branch protection — confirmed
+- [x] PR without passing CI checks cannot be merged — confirmed (PR #3 required fix before merge)
+- [x] PR template renders correctly when opening a new PR — confirmed
+- [ ] PR labels are automatically applied based on size and scope *(T-038 deferred)*
 
 ### 🔒 GATE: ARI-0 Checkpoint
 
