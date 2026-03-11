@@ -1,0 +1,13 @@
+[package]
+name = "zed-stringknife"
+version = "0.0.1"
+edition = "2021"
+license = "MIT"
+description = "Zed extension WASM shim for StringKnife"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+zed_extension_api = "0.7.0"
