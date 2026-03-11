@@ -2,7 +2,7 @@
 
 > **A surgical string transformation toolkit for the Zed editor, delivered as a Language Server Protocol extension with context-menu code actions.**
 
-**Product Owner:** Dragos Ionut Bejenariu
+**Product Owner:** John Bejenariu
 **Repository:** `zed-stringknife`
 **License:** MIT
 **Extension ID:** `stringknife`

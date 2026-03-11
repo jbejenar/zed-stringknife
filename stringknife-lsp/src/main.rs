@@ -218,10 +218,16 @@ fn extract_range(text: &str, range: Range) -> Option<String> {
         }
 
         // Last line: from start to end_char.
-        let last_line = lines.get(end_line)?;
-        let end_byte = char_offset_to_byte(last_line, end_char)?;
-        result.push('\n');
-        result.push_str(&last_line[..end_byte]);
+        // When end_char is 0 and end_line is past the last line,
+        // the selection ends at the very end of the previous line.
+        if end_char == 0 && end_line >= lines.len() {
+            // Nothing more to add — we already included up to the last line.
+        } else {
+            let last_line = lines.get(end_line)?;
+            let end_byte = char_offset_to_byte(last_line, end_char)?;
+            result.push('\n');
+            result.push_str(&last_line[..end_byte]);
+        }
 
         Some(result)
     }

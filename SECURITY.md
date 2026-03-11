@@ -2,7 +2,7 @@
 
 ## Reporting a Vulnerability
 
-Please report security vulnerabilities to **dragos@bejenariu.dev**.
+Please report security vulnerabilities via [GitHub](https://github.com/jbejenar/zed-stringknife/security).
 Do **NOT** open a public issue for security vulnerabilities.
 
 We will acknowledge receipt within 48 hours and provide an initial assessment

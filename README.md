@@ -1,56 +1,57 @@
 # StringKnife
 
-A surgical string transformation toolkit for the [Zed editor](https://zed.dev), delivered as an LSP-based extension with context-menu code actions.
+A surgical string transformation toolkit for the [Zed editor](https://zed.dev), delivered as an LSP-based extension with code-action transforms.
 
 ## Features
 
-Select text in any file and right-click to access 50+ string transformations:
+Select text in any file, then trigger code actions to transform it in place:
 
 | Category | Operations |
 |----------|-----------|
-| Encoding | Base64, URL, HTML, Hex encode/decode |
-| Hashing | MD5, SHA-1, SHA-256, SHA-512, CRC32 |
-| Case | camelCase, PascalCase, snake_case, kebab-case, SCREAMING_SNAKE, and more |
-| JSON/XML | Pretty-print, minify, escape/unescape |
-| JWT | Decode header, payload, or full token |
-| Numbers | Decimal ↔ hex ↔ binary ↔ octal |
-| UUID | Generate v4/v7, validate |
-| Timestamps | Epoch ↔ ISO 8601 ↔ human-readable |
-| Extract | Emails, URLs, IPs from text |
-| Whitespace | Trim, collapse, sort lines, remove duplicates |
-| Escape | Backslash, regex, SQL, shell, CSV |
-| Compress | Gzip/deflate ↔ Base64 |
+| Encoding | Base64, Base64URL, URL, HTML, Hex encode/decode |
+| Unicode | Escape/unescape, show codepoints |
+| Misc | Reverse string |
+| *Planned* | Hashing, case conversion, JSON/XML, JWT, UUID, timestamps, and more |
 
-> **Status:** Under development. See [roadmap](roadmap/roadmap.md) for progress.
+> **Status:** Under active development — Phase 1 (core transforms). See [roadmap](roadmap/roadmap.md) for the full plan.
+
+## Usage
+
+1. **Select text** in any supported file
+2. Open code actions:
+   - Right-click the selection and choose from the **StringKnife** entries, or
+   - Press `Cmd+.` (macOS) / `Ctrl+.` (Linux) to open the code action menu
+3. Pick a transform — the selected text is replaced in place
+
+Only transforms that produce a different result from the input are shown, so the menu stays clean (e.g., "Base64 Decode" won't appear if the selection isn't valid Base64).
 
 ## Installation
 
 ### From Zed Extensions (coming soon)
 
 1. Open Zed
-2. `Cmd+Shift+P` → "Extensions: Install Extension"
-3. Search for "StringKnife"
+2. `Cmd+Shift+P` → "zed: extensions"
+3. Search for "StringKnife" and install
 
-### Dev Install
+## Usage
 
-```bash
-# Clone and build
-git clone https://github.com/jbejenar/zed-stringknife.git
-cd zed-stringknife
-cargo build --release
+1. **Select text** in any file
+2. Press **`Cmd+.`** (macOS) or **`Ctrl+.`** (Linux) to open the code actions menu — or right-click the selection
+3. Pick a **StringKnife** transform — the selected text is replaced in place
 
-# Install as dev extension in Zed
-# Cmd+Shift+P → "Extensions: Install Dev Extension"
-# Select this repository's root directory
+Only transforms that produce a different result are shown. For example, "Base64 Decode" won't appear if the selection isn't valid Base64.
+
+## Architecture
+
+StringKnife is a three-layer stack — arrows point downward only:
+
+```
+WASM Extension (src/lib.rs)          → Zed API surface, starts the LSP binary
+LSP Server     (stringknife-lsp/)    → JSON-RPC dispatch, code action routing
+Transform Core (stringknife-core/)   → Pure functions: fn(&str) -> Result<String>
 ```
 
-## How It Works
-
-StringKnife uses a custom Language Server that provides code actions for text transformations. When you select text, the LSP offers relevant transformations in Zed's context menu. The architecture:
-
-1. **WASM Extension** — Thin shim that manages the LSP binary lifecycle
-2. **LSP Server** — Routes `textDocument/codeAction` requests to transform functions
-3. **Transform Engine** — Pure functions: `fn(&str) -> Result<String, Error>`
+The transform layer has zero LSP dependencies, no I/O, and no side effects.
 
 ## License
 

@@ -1,8 +1,7 @@
-[extension]
 id = "stringknife"
 name = "StringKnife"
 description = "50+ string/text manipulation commands — encode, decode, hash, case-convert, extract, and more — available as code actions in any file."
-authors = ["Dragos Ionut Bejenariu <dragos@bejenariu.dev>"]
+authors = ["John Bejenariu <jbejenar@users.noreply.github.com>"]
 repository = "https://github.com/jbejenar/zed-stringknife"
 schema_version = 1
 version = "0.0.1"
