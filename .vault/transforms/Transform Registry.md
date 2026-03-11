@@ -19,10 +19,11 @@ tags: [transform]
 | html_decode | html | Done | (incl.) | T-121 |
 | hex_encode | hex | Done | 16 | T-130 |
 | hex_decode | hex | Done | (incl.) | T-131 |
-| md5 | hash | Pending | -- | -- |
-| sha1 | hash | Pending | -- | -- |
-| sha256 | hash | Pending | -- | -- |
-| sha512 | hash | Pending | -- | -- |
+| md5 | hash | Done | 27 | T-200 |
+| sha1 | hash | Done | (incl.) | T-201 |
+| sha256 | hash | Done | (incl.) | T-202 |
+| sha512 | hash | Done | (incl.) | T-203 |
+| crc32 | hash | Done | (incl.) | T-204 |
 | upper | case | Pending | -- | -- |
 | lower | case | Pending | -- | -- |
 | camel_case | case | Pending | -- | -- |

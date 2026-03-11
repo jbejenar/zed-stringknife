@@ -7,6 +7,7 @@
 
 pub mod base64;
 pub(crate) mod common;
+pub mod hash;
 pub mod hex;
 pub mod html;
 pub mod misc;

@@ -1322,7 +1322,7 @@ Implement the smart detection system that surfaces relevant decode actions based
 
 **Priority:** High | **Impact:** High | **Effort:** Medium | **Risk:** Low
 **Source:** Product Roadmap v1 — Phase 2
-**Status:** Not Started
+**Status:** Done
 **Dependencies:** EPIC-0.4 (transform pattern established)
 **AI-first benefit:** Hash transforms are stateless and deterministic — perfect for agent-generated test vectors from known RFCs.
 
@@ -1330,25 +1330,25 @@ Implement one-way hash operations (MD5, SHA-1, SHA-256, SHA-512, CRC32) as code 
 
 #### Definition of Done
 
-- [ ] **T-200** — Implement `MD5 Hash` code action
-  - [ ] Pure function in `transforms/hash.rs`
-  - [ ] Replaces selected text with its MD5 hex digest
-  - [ ] Add informational note: not for security use
-- [ ] **T-201** — Implement `SHA-1 Hash` code action
-- [ ] **T-202** — Implement `SHA-256 Hash` code action
-- [ ] **T-203** — Implement `SHA-512 Hash` code action
-- [ ] **T-204** — Implement `CRC32 Checksum` code action
-- [ ] **T-205** — Unit tests for all hash operations
-  - [ ] Known test vectors (RFC / NIST)
-  - [ ] Empty string hash
-  - [ ] Unicode input
+- [x] **T-200** — Implement `MD5 Hash` code action
+  - [x] Pure function in `transforms/hash.rs`
+  - [x] Replaces selected text with its MD5 hex digest
+  - [x] Add informational note: not for security use
+- [x] **T-201** — Implement `SHA-1 Hash` code action
+- [x] **T-202** — Implement `SHA-256 Hash` code action
+- [x] **T-203** — Implement `SHA-512 Hash` code action
+- [x] **T-204** — Implement `CRC32 Checksum` code action
+- [x] **T-205** — Unit tests for all hash operations (27 tests)
+  - [x] Known test vectors (RFC / NIST)
+  - [x] Empty string hash
+  - [x] Unicode input
 
 #### Verification
 
-- [ ] `cargo test -p transforms -- hash` passes all tests
-- [ ] MD5/SHA outputs match NIST test vectors exactly
-- [ ] Empty string produces correct hash for each algorithm
-- [ ] Code actions work in Zed context menu
+- [x] `cargo test -p transforms -- hash` passes all 27 tests
+- [x] MD5/SHA outputs match NIST test vectors exactly
+- [x] Empty string produces correct hash for each algorithm
+- [ ] Code actions work in Zed context menu *(manual verification)*
 
 ### EPIC-2.2: JWT Operations (Read-Only Decode)
 

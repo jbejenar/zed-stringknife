@@ -14,7 +14,7 @@ use tower_lsp::lsp_types::{
 use tower_lsp::{Client, LanguageServer, LspService, Server};
 
 use stringknife_core::detect::{detect_encodings, DetectedEncoding};
-use stringknife_core::transforms::{base64, hex, html, misc, unicode, url};
+use stringknife_core::transforms::{base64, hash, hex, html, misc, unicode, url};
 
 /// Document store: maps document URIs to their full text content.
 struct DocumentStore {
@@ -116,118 +116,115 @@ impl LanguageServer for Backend {
             return Ok(Some(Vec::new()));
         };
 
-        // T-151: Detect which encodings the selected text looks like.
-        let detected = detect_encodings(&selected);
+        Ok(Some(build_actions(uri, range, &selected)))
+    }
+}
 
-        let mut detected_actions = Vec::new();
-        let mut encode_actions = Vec::new();
+/// Build the full list of code actions for a given selection.
+///
+/// T-151: Detected decode actions appear first; encode/hash actions always appear.
+/// T-152: Actions are ordered by relevance (detected decodes, then encodes, then hashes).
+fn build_actions(uri: &Url, range: Range, selected: &str) -> Vec<CodeActionOrCommand> {
+    let detected = detect_encodings(selected);
 
-        // Helper: try a transform and add to the appropriate list.
-        let mut try_decode =
-            |title: &str,
-             encoding: DetectedEncoding,
-             result: std::result::Result<String, stringknife_core::StringKnifeError>| {
-                if let Ok(ref transformed) = result {
-                    if *transformed != selected {
-                        let action = build_code_action(title, uri.clone(), range, transformed);
-                        // T-152: Detected decodes go first.
-                        if detected.contains(&encoding) {
-                            detected_actions.push(action);
-                        }
+    let mut detected_actions = Vec::new();
+    let mut encode_actions = Vec::new();
+
+    let mut try_decode =
+        |title: &str,
+         encoding: DetectedEncoding,
+         result: std::result::Result<String, stringknife_core::StringKnifeError>| {
+            if let Ok(ref transformed) = result {
+                if *transformed != *selected {
+                    let action = build_code_action(title, uri.clone(), range, transformed);
+                    if detected.contains(&encoding) {
+                        detected_actions.push(action);
                     }
                 }
-            };
+            }
+        };
 
-        let mut try_encode = |title: &str,
-                              result: std::result::Result<
-            String,
-            stringknife_core::StringKnifeError,
-        >| {
+    let mut try_encode =
+        |title: &str, result: std::result::Result<String, stringknife_core::StringKnifeError>| {
             if let Ok(ref transformed) = result {
-                if *transformed != selected {
+                if *transformed != *selected {
                     encode_actions.push(build_code_action(title, uri.clone(), range, transformed));
                 }
             }
         };
 
-        // --- Decode actions (only shown if detected) ---
+    // --- Decode actions (only shown if detected) ---
+    try_decode(
+        "StringKnife: Base64 Decode",
+        DetectedEncoding::Base64,
+        base64::base64_decode(selected),
+    );
+    try_decode(
+        "StringKnife: Base64URL Decode",
+        DetectedEncoding::Base64,
+        base64::base64url_decode(selected),
+    );
+    try_decode(
+        "StringKnife: URL Decode",
+        DetectedEncoding::UrlEncoded,
+        url::url_decode(selected),
+    );
+    try_decode(
+        "StringKnife: HTML Decode",
+        DetectedEncoding::HtmlEntity,
+        html::html_decode(selected),
+    );
+    try_decode(
+        "StringKnife: Hex Decode",
+        DetectedEncoding::Hex,
+        hex::hex_decode(selected),
+    );
+    try_decode(
+        "StringKnife: Unicode Unescape",
+        DetectedEncoding::UnicodeEscape,
+        unicode::unicode_unescape(selected),
+    );
 
-        // Base64 decode
-        try_decode(
-            "StringKnife: Base64 Decode",
-            DetectedEncoding::Base64,
-            base64::base64_decode(&selected),
-        );
-        try_decode(
-            "StringKnife: Base64URL Decode",
-            DetectedEncoding::Base64,
-            base64::base64url_decode(&selected),
-        );
+    // --- Encode actions (always shown) ---
+    try_encode(
+        "StringKnife: Base64 Encode",
+        base64::base64_encode(selected),
+    );
+    try_encode(
+        "StringKnife: Base64URL Encode",
+        base64::base64url_encode(selected),
+    );
+    try_encode("StringKnife: URL Encode", url::url_encode(selected));
+    try_encode(
+        "StringKnife: URL Encode (Component)",
+        url::url_encode_component(selected),
+    );
+    try_encode("StringKnife: HTML Encode", html::html_encode(selected));
+    try_encode("StringKnife: Hex Encode", hex::hex_encode(selected));
+    try_encode(
+        "StringKnife: Unicode Escape",
+        unicode::unicode_escape(selected),
+    );
+    try_encode(
+        "StringKnife: Show Unicode Codepoints",
+        unicode::show_codepoints(selected),
+    );
+    try_encode(
+        "StringKnife: Reverse String",
+        misc::reverse_string(selected),
+    );
 
-        // URL decode
-        try_decode(
-            "StringKnife: URL Decode",
-            DetectedEncoding::UrlEncoded,
-            url::url_decode(&selected),
-        );
+    // --- Hash actions (one-way, always shown) ---
+    try_encode("StringKnife: MD5 Hash", hash::md5(selected));
+    try_encode("StringKnife: SHA-1 Hash", hash::sha1(selected));
+    try_encode("StringKnife: SHA-256 Hash", hash::sha256(selected));
+    try_encode("StringKnife: SHA-512 Hash", hash::sha512(selected));
+    try_encode("StringKnife: CRC32 Checksum", hash::crc32(selected));
 
-        // HTML decode
-        try_decode(
-            "StringKnife: HTML Decode",
-            DetectedEncoding::HtmlEntity,
-            html::html_decode(&selected),
-        );
-
-        // Hex decode
-        try_decode(
-            "StringKnife: Hex Decode",
-            DetectedEncoding::Hex,
-            hex::hex_decode(&selected),
-        );
-
-        // Unicode unescape
-        try_decode(
-            "StringKnife: Unicode Unescape",
-            DetectedEncoding::UnicodeEscape,
-            unicode::unicode_unescape(&selected),
-        );
-
-        // --- Encode actions (always shown) ---
-
-        try_encode(
-            "StringKnife: Base64 Encode",
-            base64::base64_encode(&selected),
-        );
-        try_encode(
-            "StringKnife: Base64URL Encode",
-            base64::base64url_encode(&selected),
-        );
-        try_encode("StringKnife: URL Encode", url::url_encode(&selected));
-        try_encode(
-            "StringKnife: URL Encode (Component)",
-            url::url_encode_component(&selected),
-        );
-        try_encode("StringKnife: HTML Encode", html::html_encode(&selected));
-        try_encode("StringKnife: Hex Encode", hex::hex_encode(&selected));
-        try_encode(
-            "StringKnife: Unicode Escape",
-            unicode::unicode_escape(&selected),
-        );
-        try_encode(
-            "StringKnife: Show Unicode Codepoints",
-            unicode::show_codepoints(&selected),
-        );
-        try_encode(
-            "StringKnife: Reverse String",
-            misc::reverse_string(&selected),
-        );
-
-        // T-152: Detected decodes first, then all encode/misc actions.
-        let mut actions = detected_actions;
-        actions.extend(encode_actions);
-
-        Ok(Some(actions))
-    }
+    // T-152: Detected decodes first, then all encode/misc/hash actions.
+    let mut actions = detected_actions;
+    actions.extend(encode_actions);
+    actions
 }
 
 /// Extract the text within a given LSP range from the full document text.
