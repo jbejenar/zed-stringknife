@@ -1,8 +1,8 @@
 ---
 type: session-handoff
-current_phase: 1
-current_ticket: null
-blocked_by: [T-018, T-019, T-020, T-667, ARI-0, PMR-0, PMR-1, ARI-1]
+current_phase: 2
+current_ticket: EPIC-2.4
+blocked_by: [T-018, T-019, T-020, T-667, ARI-0, PMR-0, PMR-1, ARI-1, T-224, T-225]
 tags: [session]
 ---
 
@@ -10,44 +10,46 @@ tags: [session]
 
 ## Current State
 
-Phase 0 is **code-complete**. ARI-BASELINE at **59/100 (L3 Capable)**.
-Phase 1 EPIC-1.1 through EPIC-1.6 are **done** — 6 transform modules + smart detection.
-A-010 Code Quality Audit is **partially done** (coverage measurement blocked — needs Linux CI).
-Remaining Phase 1 blockers: PMR-1, ARI-1 gate — both require human input.
+Phase 2 **in progress**. EPIC-2.1 (hash), EPIC-2.2 (JWT), EPIC-2.3 (JSON) are **done**.
+T-224/T-225 (JSON↔YAML) **deferred** — need YAML parser dependency decision.
+Next up: **EPIC-2.4** (XML operations) or EPIC-2.5 (TOML/CSV).
 
-**Total tests: 134** (129 core + 5 LSP). Zero clippy warnings. Fmt clean.
+**Total tests: 211** (206 core + 5 LSP). Zero clippy warnings. Fmt clean.
 
-## What Last Agent Did (Session 3)
+## What Last Agent Did (Session 4)
 
-1. **EPIC-1.6** — Smart detection & code action categorisation (T-150..T-154)
-   - Created `stringknife-core/src/detect.rs` — 23 detection tests
-   - Detects Base64, URL-encoded, HTML entity, hex, Unicode escape patterns
-   - LSP surfaces detected decodes first, then all encodes
-   - Empty selection → zero code actions; multi-line selections handled
-2. **A-010** — Code Quality Audit (partial)
-   - Extracted `check_size()` into `transforms/common.rs` (was duplicated 6x)
-   - All 17 public functions have rustdoc comments
-   - Clippy zero warnings
-   - Audit documented in `.vault/audits/CODE-QUALITY-1.md`
-3. Added emoji to extension description in extension.toml
+1. **EPIC-2.3** — JSON operations (T-220..T-223, T-226)
+   - Created `stringknife-core/src/transforms/json.rs` — 24 tests
+   - `json_pretty_print` — 2-space indent, character-level formatter (no DOM)
+   - `json_minify` — strips whitespace outside strings
+   - `json_escape` — RFC 8259 escape for JSON string values
+   - `json_unescape` — handles `\uXXXX`, surrogate pairs, all standard escapes
+   - Wired 4 JSON code actions into LSP (always-shown section)
+   - Refactored JWT module to use shared `json::json_pretty_print` (removed duplicate)
+   - T-224/T-225 deferred (YAML needs external dep or hand-implementation)
+
+2. **Session 3 work also included** (from context continuation):
+   - EPIC-2.1 (hash) — MD5, SHA-1, SHA-256, SHA-512, CRC32 all hand-implemented
+   - EPIC-2.2 (JWT) — decode header/payload/full with timestamp annotations
+   - EPIC-1.6 (detection) — JWT detection added to smart detect
 
 ## What Next Agent Should Do
 
-### Human actions needed (Phase 1 gate):
+### Automated (continue Phase 2):
+1. **EPIC-2.4** — XML operations (escape/unescape, pretty print)
+2. **EPIC-2.5** — TOML/CSV operations
+3. **EPIC-2.6** — Case conversion operations
+4. **A-020** — Phase 2 code quality audit
+
+### Human actions still needed:
 1. **PMR-1** — MVP Scope Review (requires user testing)
 2. **ARI-1 gate** — Run ariscan, target >= 75/100
 3. **T-018/T-019/T-020** — Install dev extension in Zed, verify code actions work
-4. **T-667** — Open .vault/ in Obsidian, verify graph connectivity
-5. **ARI-0 gate** — Run ariscan, target >= 70/100
-6. **PMR-0** — Foundation review
-7. Set up cargo-tarpaulin in Linux CI for coverage measurement
-
-### If Phase 1 gate passes, next automated work:
-1. **EPIC-2.1** — Hash operations (MD5, SHA-1, SHA-256, SHA-512, CRC32)
-2. Continue through Phase 2 EPICs
+4. **T-224/T-225** — Decide on YAML dep (serde_yaml adds ~10 crates) or hand-implement
+5. Phase 1 gate items still pending (PMR-0, ARI-0, T-667)
 
 ## Environment Notes
 
 - Rust 1.94.0 — Homebrew cargo + rustup toolchain
 - Quick commands: `make test`, `make lint`, `make fmt`, `make doctor`
-- Total tests: 129 (core) + 5 (LSP) = 134
+- Total tests: 206 (core) + 5 (LSP) = 211

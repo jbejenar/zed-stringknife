@@ -1391,7 +1391,7 @@ Implement read-only JWT decoding (header, payload, full). No signature verificat
 
 **Priority:** Critical | **Impact:** Very High | **Effort:** Medium | **Risk:** Low
 **Source:** Product Roadmap v1 — Phase 2
-**Status:** Not Started
+**Status:** Done (T-224/T-225 deferred — need YAML parser dep)
 **Dependencies:** EPIC-0.4
 **AI-first benefit:** JSON transforms are the most frequently used data format operations — high-value, low-risk for agent contributions.
 
@@ -1399,24 +1399,24 @@ Implement JSON pretty print, minify, escape/unescape, and cross-format conversio
 
 #### Definition of Done
 
-- [ ] **T-220** — Implement `JSON Pretty Print` code action
-  - [ ] Pure function in `transforms/json.rs`
-  - [ ] 2-space indent
-  - [ ] Handle already-pretty JSON (no-op or re-format)
-- [ ] **T-221** — Implement `JSON Minify` code action
-- [ ] **T-222** — Implement `JSON Escape String` code action (escape special chars for embedding in JSON string values)
-- [ ] **T-223** — Implement `JSON Unescape String` code action
-- [ ] **T-224** — Implement `JSON → YAML` code action
-- [ ] **T-225** — Implement `YAML → JSON` code action
-- [ ] **T-226** — Unit tests for JSON operations
-  - [ ] Nested objects and arrays
-  - [ ] Special characters and escape sequences
-  - [ ] Large payloads (performance)
-  - [ ] Invalid JSON error handling
+- [x] **T-220** — Implement `JSON Pretty Print` code action
+  - [x] Pure function in `transforms/json.rs`
+  - [x] 2-space indent
+  - [x] Handle already-pretty JSON (no-op or re-format)
+- [x] **T-221** — Implement `JSON Minify` code action
+- [x] **T-222** — Implement `JSON Escape String` code action (escape special chars for embedding in JSON string values)
+- [x] **T-223** — Implement `JSON Unescape String` code action
+- [ ] **T-224** — Implement `JSON → YAML` code action *(deferred: needs YAML parser dependency)*
+- [ ] **T-225** — Implement `YAML → JSON` code action *(deferred: needs YAML parser dependency)*
+- [x] **T-226** — Unit tests for JSON operations
+  - [x] Nested objects and arrays
+  - [x] Special characters and escape sequences
+  - [x] Large payloads (performance)
+  - [x] Invalid JSON error handling
 
 #### Verification
 
-- [ ] `cargo test -p transforms -- json` passes all tests
+- [x] `cargo test -p transforms -- json` passes all tests
 - [ ] Pretty print produces valid, readable JSON with 2-space indent
 - [ ] Minify removes all unnecessary whitespace
 - [ ] JSON ↔ YAML roundtrip preserves data integrity

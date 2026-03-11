@@ -8,6 +8,7 @@ use std::fmt::Write;
 use super::common::check_size;
 use crate::error::StringKnifeError;
 use crate::transforms::base64;
+use crate::transforms::json;
 
 #[cfg(test)]
 use crate::MAX_INPUT_BYTES;
@@ -21,7 +22,7 @@ pub fn jwt_decode_header(input: &str) -> Result<String, StringKnifeError> {
     check_size(input)?;
     let parts = split_jwt(input)?;
     let decoded = decode_segment(parts[0], "header")?;
-    json_pretty_print(&decoded)
+    json::json_pretty_print(&decoded)
 }
 
 /// Decodes the JWT payload (second segment) and returns pretty-printed JSON.
@@ -35,7 +36,7 @@ pub fn jwt_decode_payload(input: &str) -> Result<String, StringKnifeError> {
     check_size(input)?;
     let parts = split_jwt(input)?;
     let decoded = decode_segment(parts[1], "payload")?;
-    let pretty = json_pretty_print(&decoded)?;
+    let pretty = json::json_pretty_print(&decoded)?;
     Ok(annotate_timestamps(&pretty))
 }
 
@@ -49,10 +50,10 @@ pub fn jwt_decode_full(input: &str) -> Result<String, StringKnifeError> {
     let parts = split_jwt(input)?;
 
     let header = decode_segment(parts[0], "header")?;
-    let header_pretty = json_pretty_print(&header)?;
+    let header_pretty = json::json_pretty_print(&header)?;
 
     let payload = decode_segment(parts[1], "payload")?;
-    let payload_pretty = json_pretty_print(&payload)?;
+    let payload_pretty = json::json_pretty_print(&payload)?;
     let payload_annotated = annotate_timestamps(&payload_pretty);
 
     // Signature: show as hex bytes
@@ -92,105 +93,6 @@ fn decode_segment(segment: &str, name: &str) -> Result<String, StringKnifeError>
         operation: "jwt_decode".to_string(),
         reason: format!("invalid Base64URL in {name} segment"),
     })
-}
-
-/// Minimal JSON pretty-printer (reformats valid JSON with 2-space indent).
-///
-/// This is a character-level formatter — it does not parse JSON into a tree.
-/// It handles strings (with escaped quotes), numbers, booleans, null, arrays,
-/// and objects.
-fn json_pretty_print(input: &str) -> Result<String, StringKnifeError> {
-    let trimmed = input.trim();
-    if trimmed.is_empty() {
-        return Err(StringKnifeError::InvalidInput {
-            operation: "json_pretty_print".to_string(),
-            reason: "empty JSON input".to_string(),
-        });
-    }
-
-    let mut result = String::with_capacity(trimmed.len() * 2);
-    let mut indent: usize = 0;
-    let mut in_string = false;
-    let mut escape_next = false;
-    let chars: Vec<char> = trimmed.chars().collect();
-    let mut i = 0;
-
-    while i < chars.len() {
-        let c = chars[i];
-
-        if escape_next {
-            result.push(c);
-            escape_next = false;
-            i += 1;
-            continue;
-        }
-
-        if in_string {
-            result.push(c);
-            if c == '\\' {
-                escape_next = true;
-            } else if c == '"' {
-                in_string = false;
-            }
-            i += 1;
-            continue;
-        }
-
-        match c {
-            '"' => {
-                in_string = true;
-                result.push(c);
-            }
-            '{' | '[' => {
-                result.push(c);
-                indent += 1;
-                // Check if next non-whitespace is closing bracket (empty object/array)
-                let next_meaningful = chars[i + 1..].iter().position(|&ch| !ch.is_whitespace());
-                if let Some(pos) = next_meaningful {
-                    let next_char = chars[i + 1 + pos];
-                    if (c == '{' && next_char == '}') || (c == '[' && next_char == ']') {
-                        indent -= 1;
-                        result.push(next_char);
-                        i = i + 2 + pos;
-                        continue;
-                    }
-                }
-                result.push('\n');
-                push_indent(&mut result, indent);
-            }
-            '}' | ']' => {
-                indent = indent.saturating_sub(1);
-                result.push('\n');
-                push_indent(&mut result, indent);
-                result.push(c);
-            }
-            ',' => {
-                result.push(',');
-                result.push('\n');
-                push_indent(&mut result, indent);
-            }
-            ':' => {
-                result.push(':');
-                result.push(' ');
-            }
-            c if c.is_whitespace() => {
-                // Skip original whitespace (we add our own)
-            }
-            _ => {
-                result.push(c);
-            }
-        }
-
-        i += 1;
-    }
-
-    Ok(result)
-}
-
-fn push_indent(s: &mut String, level: usize) {
-    for _ in 0..level {
-        s.push_str("  ");
-    }
 }
 
 /// Annotate timestamp fields (exp, iat, nbf) with human-readable dates.
@@ -381,42 +283,6 @@ mod tests {
             jwt_decode_header(&big).unwrap_err(),
             StringKnifeError::InputTooLarge { .. }
         ));
-    }
-
-    // === JSON pretty-print (internal) ===
-
-    #[test]
-    fn pretty_print_object() {
-        let result = json_pretty_print(r#"{"a":1,"b":"hello"}"#).unwrap();
-        assert!(result.contains("\"a\": 1"));
-        assert!(result.contains("\"b\": \"hello\""));
-        // Should have newlines and indentation
-        assert!(result.contains('\n'));
-        assert!(result.contains("  "));
-    }
-
-    #[test]
-    fn pretty_print_nested() {
-        let result = json_pretty_print(r#"{"a":{"b":1}}"#).unwrap();
-        assert!(result.contains("    \"b\""));
-    }
-
-    #[test]
-    fn pretty_print_array() {
-        let result = json_pretty_print(r#"[1,2,3]"#).unwrap();
-        assert!(result.contains("1,\n"));
-    }
-
-    #[test]
-    fn pretty_print_empty_object() {
-        let result = json_pretty_print("{}").unwrap();
-        assert_eq!(result, "{}");
-    }
-
-    #[test]
-    fn pretty_print_string_with_escaped_quote() {
-        let result = json_pretty_print(r#"{"a":"hello \"world\""}"#).unwrap();
-        assert!(result.contains(r#"\"world\""#));
     }
 
     // === Timestamp conversion ===

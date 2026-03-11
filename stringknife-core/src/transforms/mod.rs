@@ -10,6 +10,7 @@ pub(crate) mod common;
 pub mod hash;
 pub mod hex;
 pub mod html;
+pub mod json;
 pub mod jwt;
 pub mod misc;
 pub mod unicode;

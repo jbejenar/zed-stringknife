@@ -30,9 +30,11 @@ tags: [transform]
 | pascal_case | case | Pending | -- | -- |
 | snake_case | case | Pending | -- | -- |
 | kebab_case | case | Pending | -- | -- |
-| json_pretty | json | Pending | -- | -- |
-| json_minify | json | Pending | -- | -- |
-| jwt_decode_header | jwt | Done | 20 | T-210 |
+| json_pretty_print | json | Done | 24 | T-220 |
+| json_minify | json | Done | (incl.) | T-221 |
+| json_escape | json | Done | (incl.) | T-222 |
+| json_unescape | json | Done | (incl.) | T-223 |
+| jwt_decode_header | jwt | Done | 15 | T-210 |
 | jwt_decode_payload | jwt | Done | (incl.) | T-211 |
 | jwt_decode_full | jwt | Done | (incl.) | T-212 |
 | unicode_escape | unicode | Done | 25 | T-140 |

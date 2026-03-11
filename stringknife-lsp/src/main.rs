@@ -14,7 +14,7 @@ use tower_lsp::lsp_types::{
 use tower_lsp::{Client, LanguageServer, LspService, Server};
 
 use stringknife_core::detect::{detect_encodings, DetectedEncoding};
-use stringknife_core::transforms::{base64, hash, hex, html, jwt, misc, unicode, url};
+use stringknife_core::transforms::{base64, hash, hex, html, json, jwt, misc, unicode, url};
 
 /// Document store: maps document URIs to their full text content.
 struct DocumentStore {
@@ -230,6 +230,21 @@ fn build_actions(uri: &Url, range: Range, selected: &str) -> Vec<CodeActionOrCom
     try_encode(
         "StringKnife: Reverse String",
         misc::reverse_string(selected),
+    );
+
+    // --- JSON actions (always shown) ---
+    try_encode(
+        "StringKnife: JSON Pretty Print",
+        json::json_pretty_print(selected),
+    );
+    try_encode("StringKnife: JSON Minify", json::json_minify(selected));
+    try_encode(
+        "StringKnife: JSON Escape String",
+        json::json_escape(selected),
+    );
+    try_encode(
+        "StringKnife: JSON Unescape String",
+        json::json_unescape(selected),
     );
 
     // --- Hash actions (one-way, always shown) ---
