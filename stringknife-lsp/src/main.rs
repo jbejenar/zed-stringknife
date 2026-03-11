@@ -14,7 +14,7 @@ use tower_lsp::lsp_types::{
 use tower_lsp::{Client, LanguageServer, LspService, Server};
 
 use stringknife_core::detect::{detect_encodings, DetectedEncoding};
-use stringknife_core::transforms::{base64, hash, hex, html, misc, unicode, url};
+use stringknife_core::transforms::{base64, hash, hex, html, jwt, misc, unicode, url};
 
 /// Document store: maps document URIs to their full text content.
 struct DocumentStore {
@@ -124,6 +124,7 @@ impl LanguageServer for Backend {
 ///
 /// T-151: Detected decode actions appear first; encode/hash actions always appear.
 /// T-152: Actions are ordered by relevance (detected decodes, then encodes, then hashes).
+#[allow(clippy::too_many_lines)] // flat action registration list, splitting adds no clarity
 fn build_actions(uri: &Url, range: Range, selected: &str) -> Vec<CodeActionOrCommand> {
     let detected = detect_encodings(selected);
 
@@ -183,6 +184,23 @@ fn build_actions(uri: &Url, range: Range, selected: &str) -> Vec<CodeActionOrCom
         "StringKnife: Unicode Unescape",
         DetectedEncoding::UnicodeEscape,
         unicode::unicode_unescape(selected),
+    );
+
+    // JWT decode (shown if JWT detected)
+    try_decode(
+        "StringKnife: JWT Decode Header",
+        DetectedEncoding::Jwt,
+        jwt::jwt_decode_header(selected),
+    );
+    try_decode(
+        "StringKnife: JWT Decode Payload",
+        DetectedEncoding::Jwt,
+        jwt::jwt_decode_payload(selected),
+    );
+    try_decode(
+        "StringKnife: JWT Decode (Full)",
+        DetectedEncoding::Jwt,
+        jwt::jwt_decode_full(selected),
     );
 
     // --- Encode actions (always shown) ---

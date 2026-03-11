@@ -16,6 +16,8 @@ pub enum DetectedEncoding {
     Hex,
     /// Text contains Unicode escape sequences (\uXXXX or \U{XXXXXX})
     UnicodeEscape,
+    /// Text looks like a JWT (three dot-separated `Base64URL` segments)
+    Jwt,
 }
 
 /// Analyse the selected text and return all detected encoding types.
@@ -41,6 +43,9 @@ pub fn detect_encodings(input: &str) -> Vec<DetectedEncoding> {
     }
     if looks_like_unicode_escape(input) {
         detected.push(DetectedEncoding::UnicodeEscape);
+    }
+    if looks_like_jwt(input) {
+        detected.push(DetectedEncoding::Jwt);
     }
 
     detected
@@ -205,6 +210,21 @@ fn has_backslash_u_brace_escape(input: &str) -> bool {
     input.contains("\\U{") || input.contains("\\u{")
 }
 
+/// Check if text looks like a JWT (three dot-separated `Base64URL` segments).
+fn looks_like_jwt(input: &str) -> bool {
+    let trimmed = input.trim();
+    let parts: Vec<&str> = trimmed.split('.').collect();
+    if parts.len() != 3 {
+        return false;
+    }
+    // Each part must be non-empty and contain only Base64URL chars
+    parts.iter().all(|p| {
+        !p.is_empty()
+            && p.chars()
+                .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_' || c == '=')
+    })
+}
+
 /// Helper: is a byte an ASCII hex digit?
 fn is_hex_digit(b: u8) -> bool {
     b.is_ascii_hexdigit()
@@ -356,6 +376,21 @@ mod tests {
         assert!(detected.contains(&DetectedEncoding::Hex));
         // It could also look like Base64 (mixed case + digits)
         assert!(detected.contains(&DetectedEncoding::Base64));
+    }
+
+    // --- JWT detection ---
+
+    #[test]
+    fn detect_jwt_token() {
+        let token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U";
+        let detected = detect_encodings(token);
+        assert!(detected.contains(&DetectedEncoding::Jwt));
+    }
+
+    #[test]
+    fn detect_jwt_not_two_dots() {
+        let detected = detect_encodings("abc.def");
+        assert!(!detected.contains(&DetectedEncoding::Jwt));
     }
 
     // --- Empty / edge cases ---

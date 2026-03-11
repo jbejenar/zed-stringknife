@@ -1354,7 +1354,7 @@ Implement one-way hash operations (MD5, SHA-1, SHA-256, SHA-512, CRC32) as code 
 
 **Priority:** High | **Impact:** High | **Effort:** Medium | **Risk:** Low
 **Source:** Product Roadmap v1 — Phase 2
-**Status:** Not Started
+**Status:** Done
 **Dependencies:** EPIC-0.4, EPIC-1.1 (Base64 decode needed internally)
 **AI-first benefit:** JWT decode is a composition of existing Base64 + JSON transforms — demonstrates module composability.
 
@@ -1362,30 +1362,30 @@ Implement read-only JWT decoding (header, payload, full). No signature verificat
 
 #### Definition of Done
 
-- [ ] **T-210** — Implement `JWT Decode Header` code action
-  - [ ] Pure function in `transforms/jwt.rs`
-  - [ ] Parse JWT structure (header.payload.signature)
-  - [ ] Pretty-print JSON header
-  - [ ] Replace selection with decoded header JSON
-- [ ] **T-211** — Implement `JWT Decode Payload` code action
-  - [ ] Decode payload section
-  - [ ] Pretty-print JSON
-  - [ ] Highlight `exp`/`iat`/`nbf` timestamps as human-readable dates in output
-- [ ] **T-212** — Implement `JWT Decode (Full)` code action
-  - [ ] Show header + payload + signature (hex) as formatted multi-line output
-- [ ] **T-213** — Graceful handling of invalid JWT format
-- [ ] **T-214** — Unit tests with sample JWTs
-  - [ ] HS256 token
-  - [ ] RS256 token
-  - [ ] Expired token (still decodes, just shows expired date)
-  - [ ] Malformed token (missing sections)
+- [x] **T-210** — Implement `JWT Decode Header` code action
+  - [x] Pure function in `transforms/jwt.rs`
+  - [x] Parse JWT structure (header.payload.signature)
+  - [x] Pretty-print JSON header
+  - [x] Replace selection with decoded header JSON
+- [x] **T-211** — Implement `JWT Decode Payload` code action
+  - [x] Decode payload section
+  - [x] Pretty-print JSON
+  - [x] Highlight `exp`/`iat`/`nbf` timestamps as human-readable dates in output
+- [x] **T-212** — Implement `JWT Decode (Full)` code action
+  - [x] Show header + payload + signature (hex) as formatted multi-line output
+- [x] **T-213** — Graceful handling of invalid JWT format
+- [x] **T-214** — Unit tests with sample JWTs (20 tests)
+  - [x] HS256 token
+  - [x] RS256 token
+  - [x] Expired token (still decodes, just shows expired date)
+  - [x] Malformed token (missing sections)
 
 #### Verification
 
-- [ ] `cargo test -p transforms -- jwt` passes all tests
-- [ ] Valid JWT decodes to correct header and payload JSON
-- [ ] Malformed JWT returns structured error, never panics
-- [ ] Timestamp fields (`exp`, `iat`, `nbf`) display as human-readable dates
+- [x] `cargo test -p transforms -- jwt` passes all 20 tests
+- [x] Valid JWT decodes to correct header and payload JSON
+- [x] Malformed JWT returns structured error, never panics
+- [x] Timestamp fields (`exp`, `iat`, `nbf`) display as human-readable dates
 
 ### EPIC-2.3: JSON Operations
 

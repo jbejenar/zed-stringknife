@@ -32,7 +32,9 @@ tags: [transform]
 | kebab_case | case | Pending | -- | -- |
 | json_pretty | json | Pending | -- | -- |
 | json_minify | json | Pending | -- | -- |
-| jwt_decode | jwt | Pending | -- | -- |
+| jwt_decode_header | jwt | Done | 20 | T-210 |
+| jwt_decode_payload | jwt | Done | (incl.) | T-211 |
+| jwt_decode_full | jwt | Done | (incl.) | T-212 |
 | unicode_escape | unicode | Done | 25 | T-140 |
 | unicode_unescape | unicode | Done | (incl.) | T-141 |
 | show_codepoints | unicode | Done | (incl.) | T-142 |
