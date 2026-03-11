@@ -1237,7 +1237,7 @@ Implement Unicode escape/unescape operations and a codepoint inspector. Supports
 
 **Priority:** Critical | **Impact:** Very High | **Effort:** Medium | **Risk:** Medium
 **Source:** Product Roadmap v1 — Phase 1
-**Status:** Not Started
+**Status:** Done
 **Dependencies:** EPIC-1.1, EPIC-1.2, EPIC-1.3, EPIC-1.4, EPIC-1.5
 **AI-first benefit:** Smart detection heuristics make the extension self-organising — agents can add new detection patterns by following existing ones.
 
@@ -1245,26 +1245,26 @@ Implement the smart detection system that surfaces relevant decode actions based
 
 #### Definition of Done
 
-- [ ] **T-150** — Group code actions under `"StringKnife"` category in the code action response
-  - [ ] Use `CodeActionKind::REFACTOR` as the base kind
-  - [ ] Prefix all action titles with `StringKnife:` for discoverability
-- [ ] **T-151** — Only return relevant decode actions when selected text looks like encoded content
-  - [ ] Detect Base64 pattern (charset + optional padding)
-  - [ ] Detect URL-encoded pattern (contains `%XX`)
-  - [ ] Detect HTML entity pattern (contains `&...;`)
-  - [ ] Detect hex pattern (valid hex chars, even length)
-  - [ ] Always show all encode actions
-- [ ] **T-152** — Order code actions by relevance (detected decodes first, then all encodes)
-- [ ] **T-153** — Handle multi-line selections correctly
-- [ ] **T-154** — Handle empty selection (no code actions returned)
+- [x] **T-150** — Group code actions under `"StringKnife"` category in the code action response
+  - [x] Use `CodeActionKind::REFACTOR` as the base kind
+  - [x] Prefix all action titles with `StringKnife:` for discoverability
+- [x] **T-151** — Only return relevant decode actions when selected text looks like encoded content
+  - [x] Detect Base64 pattern (charset + optional padding)
+  - [x] Detect URL-encoded pattern (contains `%XX`)
+  - [x] Detect HTML entity pattern (contains `&...;`)
+  - [x] Detect hex pattern (valid hex chars, even length)
+  - [x] Always show all encode actions
+- [x] **T-152** — Order code actions by relevance (detected decodes first, then all encodes)
+- [x] **T-153** — Handle multi-line selections correctly
+- [x] **T-154** — Handle empty selection (no code actions returned)
 
 #### Verification
 
-- [ ] Selecting Base64 text surfaces "Base64 Decode" at top of context menu
-- [ ] Selecting URL-encoded text surfaces "URL Decode" at top
-- [ ] All encode actions always visible regardless of selection
-- [ ] Empty selection returns zero code actions
-- [ ] Multi-line selection produces correct WorkspaceEdit range
+- [x] Selecting Base64 text surfaces "Base64 Decode" at top of context menu
+- [x] Selecting URL-encoded text surfaces "URL Decode" at top
+- [x] All encode actions always visible regardless of selection
+- [x] Empty selection returns zero code actions
+- [x] Multi-line selection produces correct WorkspaceEdit range
 
 ### 🔒 GATE: ARI-1 Checkpoint
 
