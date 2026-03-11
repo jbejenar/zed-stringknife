@@ -15,7 +15,8 @@ use tower_lsp::{Client, LanguageServer, LspService, Server};
 
 use stringknife_core::detect::{detect_encodings, DetectedEncoding};
 use stringknife_core::transforms::{
-    base64, case, csv, hash, hex, html, json, jwt, misc, unicode, url, whitespace, xml,
+    base64, case, csv, escape, hash, hex, html, inspect, json, jwt, misc, unicode, url, whitespace,
+    xml,
 };
 
 /// Document store: maps document URIs to their full text content.
@@ -339,6 +340,43 @@ fn build_actions(uri: &Url, range: Range, selected: &str) -> Vec<CodeActionOrCom
     try_encode("StringKnife: SHA-256 Hash", hash::sha256(selected));
     try_encode("StringKnife: SHA-512 Hash", hash::sha512(selected));
     try_encode("StringKnife: CRC32 Checksum", hash::crc32(selected));
+
+    // --- Escape actions (always shown) ---
+    try_encode(
+        "StringKnife: Escape Backslashes",
+        escape::escape_backslashes(selected),
+    );
+    try_encode(
+        "StringKnife: Unescape Backslashes",
+        escape::unescape_backslashes(selected),
+    );
+    try_encode("StringKnife: Escape Regex", escape::escape_regex(selected));
+    try_encode(
+        "StringKnife: Escape SQL String",
+        escape::escape_sql(selected),
+    );
+    try_encode(
+        "StringKnife: Escape Shell String",
+        escape::escape_shell(selected),
+    );
+    try_encode(
+        "StringKnife: Escape CSV Field",
+        escape::escape_csv(selected),
+    );
+
+    // --- Inspection actions (always shown) ---
+    try_encode(
+        "StringKnife: Count Characters",
+        inspect::count_chars(selected),
+    );
+    try_encode(
+        "StringKnife: String Length (bytes)",
+        inspect::byte_length(selected),
+    );
+    try_encode(
+        "StringKnife: Detect Encoding",
+        inspect::detect_encoding(selected),
+    );
 
     // T-152: Detected decodes first, then all encode/misc/hash actions.
     let mut actions = detected_actions;

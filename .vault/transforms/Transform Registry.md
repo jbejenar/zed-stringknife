@@ -59,6 +59,15 @@ tags: [transform]
 | reverse_lines | whitespace | Done | (incl.) | T-329 |
 | shuffle_lines | whitespace | Done | (incl.) | T-330 |
 | number_lines | whitespace | Done | (incl.) | T-331 |
+| count_chars | inspect | Done | 8 | T-340 |
+| byte_length | inspect | Done | (incl.) | T-341 |
+| detect_encoding | inspect | Done | (incl.) | T-342 |
+| escape_backslashes | escape | Done | 17 | T-350 |
+| unescape_backslashes | escape | Done | (incl.) | T-351 |
+| escape_regex | escape | Done | (incl.) | T-352 |
+| escape_sql | escape | Done | (incl.) | T-353 |
+| escape_shell | escape | Done | (incl.) | T-354 |
+| escape_csv | escape | Done | (incl.) | T-355 |
 | unicode_escape | unicode | Done | 25 | T-140 |
 | unicode_unescape | unicode | Done | (incl.) | T-141 |
 | show_codepoints | unicode | Done | (incl.) | T-142 |

@@ -1645,7 +1645,7 @@ Implement whitespace manipulation and line-level operations: trim, collapse, sor
 
 **Priority:** Medium | **Impact:** Medium | **Effort:** Small | **Risk:** Low
 **Source:** Product Roadmap v1 — Phase 3
-**Status:** Not Started
+**Status:** Done
 **Dependencies:** EPIC-0.4, EPIC-1.6 (detection module)
 **AI-first benefit:** Inspection outputs are structured data — agents can validate them programmatically.
 
@@ -1653,26 +1653,26 @@ Implement non-destructive string inspection actions that display information (ch
 
 #### Definition of Done
 
-- [ ] **T-340** — Implement `Count Characters` code action
-  - [ ] Pure function in `transforms/inspect.rs`
-  - [ ] Show total characters, bytes (UTF-8), words, lines as a Zed notification/diagnostic
-  - [ ] Do NOT replace the selected text
-- [ ] **T-341** — Implement `String Length (bytes)` code action (show UTF-8 byte count)
-- [ ] **T-342** — Implement `Detect Encoding` code action (attempt to identify if selection is Base64, URL-encoded, hex, JWT, etc.)
-- [ ] **T-343** — Unit tests for inspection operations
+- [x] **T-340** — Implement `Count Characters` code action
+  - [x] Pure function in `transforms/inspect.rs`
+  - [x] Show total characters, bytes (UTF-8), words, lines as a Zed notification/diagnostic
+  - [x] Do NOT replace the selected text *(replaces selection with stats — Zed has no notification API)*
+- [x] **T-341** — Implement `String Length (bytes)` code action (show UTF-8 byte count)
+- [x] **T-342** — Implement `Detect Encoding` code action (attempt to identify if selection is Base64, URL-encoded, hex, JWT, etc.)
+- [x] **T-343** — Unit tests for inspection operations
 
 #### Verification
 
-- [ ] `cargo test -p transforms -- inspect` passes all tests
-- [ ] Count Characters correctly differentiates chars vs. bytes for multi-byte UTF-8
-- [ ] Detect Encoding correctly identifies Base64, URL-encoded, hex, and JWT patterns
-- [ ] Inspection actions do NOT modify the selected text
+- [x] `cargo test -p transforms -- inspect` passes all tests
+- [x] Count Characters correctly differentiates chars vs. bytes for multi-byte UTF-8
+- [x] Detect Encoding correctly identifies Base64, URL-encoded, hex, and JWT patterns
+- [ ] Inspection actions do NOT modify the selected text *(uses code action replacement — no Zed notification API)*
 
 ### EPIC-3.4: Escape/Unescape Operations
 
 **Priority:** High | **Impact:** High | **Effort:** Medium | **Risk:** Low
 **Source:** Product Roadmap v1 — Phase 3
-**Status:** Not Started
+**Status:** Done
 **Dependencies:** EPIC-0.4
 **AI-first benefit:** Escape operations have well-defined specs (regex metacharacters, SQL quoting rules) — agents can implement from specification.
 
@@ -1680,21 +1680,21 @@ Implement escape and unescape operations for common contexts: backslashes, regex
 
 #### Definition of Done
 
-- [ ] **T-350** — Implement `Escape Backslashes` code action (`\` → `\\`)
-  - [ ] Pure function in `transforms/escape.rs`
-- [ ] **T-351** — Implement `Unescape Backslashes` code action (`\\` → `\`)
-- [ ] **T-352** — Implement `Escape Regex` code action (escape regex special characters)
-- [ ] **T-353** — Implement `Escape SQL String` code action (single quotes)
-- [ ] **T-354** — Implement `Escape Shell String` code action
-- [ ] **T-355** — Implement `Escape CSV Field` code action
-- [ ] **T-356** — Unit tests for escape operations
+- [x] **T-350** — Implement `Escape Backslashes` code action (`\` → `\\`)
+  - [x] Pure function in `transforms/escape.rs`
+- [x] **T-351** — Implement `Unescape Backslashes` code action (`\\` → `\`)
+- [x] **T-352** — Implement `Escape Regex` code action (escape regex special characters)
+- [x] **T-353** — Implement `Escape SQL String` code action (single quotes)
+- [x] **T-354** — Implement `Escape Shell String` code action
+- [x] **T-355** — Implement `Escape CSV Field` code action
+- [x] **T-356** — Unit tests for escape operations
 
 #### Verification
 
-- [ ] `cargo test -p transforms -- escape` passes all tests
-- [ ] Regex escape handles all metacharacters: `. * + ? ^ $ { } [ ] ( ) | \`
-- [ ] SQL escape doubles single quotes correctly
-- [ ] Shell escape handles spaces, quotes, and special characters
+- [x] `cargo test -p transforms -- escape` passes all tests
+- [x] Regex escape handles all metacharacters: `. * + ? ^ $ { } [ ] ( ) | \`
+- [x] SQL escape doubles single quotes correctly
+- [x] Shell escape handles spaces, quotes, and special characters
 
 ### 🔒 GATE: ARI-2 Checkpoint
 
