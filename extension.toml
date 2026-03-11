@@ -1,0 +1,33 @@
+id = "stringknife"
+name = "StringKnife"
+description = "50+ string/text manipulation commands — encode, decode, hash, case-convert, extract, and more — available as code actions in any file."
+authors = ["John Bejenariu <jbejenar@users.noreply.github.com>"]
+repository = "https://github.com/jbejenar/zed-stringknife"
+schema_version = 1
+version = "0.0.1"
+
+[language_servers.stringknife-lsp]
+languages = [
+    "Rust",
+    "TypeScript",
+    "JavaScript",
+    "Python",
+    "Go",
+    "Ruby",
+    "HTML",
+    "CSS",
+    "JSON",
+    "TOML",
+    "YAML",
+    "Markdown",
+    "Plain Text",
+    "C",
+    "C++",
+    "Java",
+    "Kotlin",
+    "Swift",
+    "Shell Script",
+    "SQL",
+    "Elixir",
+    "PHP",
+]

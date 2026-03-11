@@ -1,0 +1,95 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-wasip1
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Check WASM crate
+        run: cargo check --target wasm32-wasip1
+
+      - name: Check LSP crate
+        run: cargo check --manifest-path stringknife-lsp/Cargo.toml
+
+      - name: Check core crate
+        run: cargo check --manifest-path stringknife-core/Cargo.toml
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Test core crate
+        run: cargo test --manifest-path stringknife-core/Cargo.toml
+
+      - name: Test LSP crate
+        run: cargo test --manifest-path stringknife-lsp/Cargo.toml
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+          targets: wasm32-wasip1
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Clippy core
+        run: cargo clippy --manifest-path stringknife-core/Cargo.toml -- -D warnings
+
+      - name: Clippy LSP
+        run: cargo clippy --manifest-path stringknife-lsp/Cargo.toml -- -D warnings
+
+  fmt:
+    name: Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+
+      - name: Check formatting (core)
+        run: cargo fmt --manifest-path stringknife-core/Cargo.toml --check
+
+      - name: Check formatting (LSP)
+        run: cargo fmt --manifest-path stringknife-lsp/Cargo.toml --check
+
+  deny:
+    name: Cargo Deny
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check
+          manifest-path: stringknife-lsp/Cargo.toml
+
+  audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: rustsec/audit-check@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}

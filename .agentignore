@@ -1,0 +1,20 @@
+# Build artifacts
+target/
+*.wasm
+
+# Dependencies
+node_modules/
+
+# VCS
+.git/
+.jj/
+
+# Obsidian runtime state (tracked config is fine)
+.vault/.obsidian/workspace.json
+.vault/.obsidian/workspace-mobile.json
+.vault/.obsidian/plugins/
+
+# Lock files (large, not useful for agent context)
+Cargo.lock
+stringknife-core/Cargo.lock
+stringknife-lsp/Cargo.lock
