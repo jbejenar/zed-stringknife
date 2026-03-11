@@ -1989,6 +1989,22 @@ Prepare all assets for Zed Extension Store publication: comprehensive README wit
   - [ ] Case conversion
   - [ ] Smart detection in action
 - [ ] **T-505** — Update `HINTS.md` with final architecture, contributor onboarding, and "how to add a new operation" guide
+- [ ] **T-506** — Add ARI badge to `README.md`
+  - [ ] Dynamic badge sourced from ariscan CI output: `ARI 8.7 / 10` with colour scale (red <6, yellow 6–7.9, green ≥8)
+  - [ ] Position: top of README alongside license and CI badges
+  - [ ] Badge links to `.vault/ari/ARI Dashboard.md` on GitHub
+- [ ] **T-507** — Add "Built with ariscan" section to `README.md`
+  - [ ] 2–3 sentences: factual, not promotional — "This repository uses ariscan to measure AI-agent readiness at every phase gate."
+  - [ ] Link to Prontiq ariscan repo
+  - [ ] ARI trajectory table pulled from existing checkpoint data (BASELINE through current)
+  - [ ] "Browse the Knowledge Vault" link pointing to `.vault/Home.md`
+- [ ] **T-508** — Make `.vault/` browsable on GitHub
+  - [ ] Confirm wikilinks render as clickable relative links in GitHub's markdown viewer
+  - [ ] If not, add fallback: `[Note Name](./path/to/Note%20Name.md)` alongside wikilinks
+  - [ ] Confirm frontmatter renders as visible YAML block
+- [ ] **T-509** — Add GitHub topics for discoverability
+  - [ ] `ariscan`, `ai-agent-readiness`, `zed-extension`, `lsp`, `rust`, `string-transformation`
+  - [ ] Update repo description: "A string transformation toolkit for Zed — built with ariscan-driven development"
 
 #### Verification
 
@@ -2317,12 +2333,39 @@ Implement gzip and deflate compression/decompression with Base64 encoding for te
 - [ ] Deflate roundtrip: `decompress(compress(x)) == x`
 - [ ] Invalid compressed data returns structured error
 
+### EPIC-6.7: ariscan Showcase Artefacts
+
+> The ARI evidence already exists in the vault. This EPIC packages it for external consumption.
+
+- [ ] **T-670** — Create `docs/ariscan-case-study.md`
+  - [ ] Structure: Problem → Approach → Results → Methodology
+  - [ ] Results pulled from existing vault checkpoint notes — no fabrication, no cherry-picking
+  - [ ] Acknowledge dips with explanations (e.g., modular coherence dropped when 6 new modules landed, recovered after refactor)
+  - [ ] Link to every vault checkpoint note as evidence
+  - [ ] Final section: how to replicate this approach in any repo
+- [ ] **T-671** — Create ARI trajectory visualisation
+  - [ ] SVG chart: X = checkpoint, Y = composite score
+  - [ ] Per-pillar sparklines showing individual progression
+  - [ ] Data source: vault checkpoint frontmatter
+  - [ ] Embed in case study and README
+- [ ] **T-672** — Create `ARCHITECTURE.md` at repo root
+  - [ ] Standalone architecture overview — doesn't require opening the vault
+  - [ ] Three-layer diagram, crate graph, data flow, key design decisions
+  - [ ] Final section: "Agent-Readiness by Design" — how each architectural choice maps to an ARI pillar
+  - [ ] This is the file a developer reads when evaluating whether to structure their repo similarly
+- [ ] **T-673** — Outsider audit
+  - [ ] Clone the repo fresh, no context, read only what's in the repo
+  - [ ] Can you understand the architecture within 5 minutes?
+  - [ ] Can you find the ARI scores within 30 seconds?
+  - [ ] Can you trace the journey from empty repo to v1.0 through the vault?
+  - [ ] Document friction points and fix them
+
 ### 🔒 GATE: ARI-4 Checkpoint (v1.0 Gate)
 
 **Priority:** Critical | **Impact:** Very High | **Effort:** Small | **Risk:** Medium
 **Source:** ARI Governance — Phase 6 v1.0 gate
 **Status:** Not Started
-**Dependencies:** EPIC-6.1, EPIC-6.2, EPIC-6.3, EPIC-6.4, EPIC-6.5, EPIC-6.6
+**Dependencies:** EPIC-6.1, EPIC-6.2, EPIC-6.3, EPIC-6.4, EPIC-6.5, EPIC-6.6, EPIC-6.7
 
 #### Definition of Done
 
@@ -2506,6 +2549,16 @@ Implement gzip and deflate compression/decompression with Base64 encoding for te
   - **Priority:** Low | **Impact:** Medium | **Effort:** Small | **Risk:** Low
   - **Status:** Not Started
   - **Notes:** ariscan P6 (Build Determinism & Type Safety) scored 50/100. It checks for `tsconfig.json strict` mode (not applicable to Rust). Rust's type system + Clippy pedantic lints provide equivalent safety. This may need an ariscan enhancement for Rust ecosystem detection.
+
+- [ ] **B-019** — Prontiq blog post: "Building a Zed Extension Agent-First" (drafted from `docs/ariscan-case-study.md`)
+  - **Priority:** Low | **Impact:** Medium | **Effort:** Medium | **Risk:** Low
+  - **Status:** Not Started
+  - **Dependencies:** T-670 complete
+
+- [ ] **B-020** — Conference talk abstract: "ARI Score as an Engineering Metric" using StringKnife as worked example
+  - **Priority:** Low | **Impact:** Medium | **Effort:** Medium | **Risk:** Low
+  - **Status:** Not Started
+  - **Dependencies:** T-670 complete
 
 ---
 
