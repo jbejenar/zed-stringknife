@@ -23,7 +23,10 @@ Thumbs.db
 .vault/.obsidian/workspace.json
 .vault/.obsidian/workspace-mobile.json
 .vault/.obsidian/hotkeys.json
+.vault/.obsidian/appearance.json
 .vault/.obsidian/community-plugins.json
 .vault/.obsidian/core-plugins.json
 .vault/.obsidian/core-plugins-migration.json
 .vault/.obsidian/plugins/
+.vault/*.canvas
+.vault/[0-9][0-9][0-9][0-9]-*.md
