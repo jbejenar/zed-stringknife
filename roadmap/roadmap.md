@@ -2,7 +2,7 @@
 
 > **A surgical string transformation toolkit for the Zed editor, delivered as a Language Server Protocol extension with context-menu code actions.**
 
-**Product Owner:** John Bejenariu
+**Product Owner:** Dragos Ionut Bejenariu
 **Repository:** `zed-stringknife`
 **License:** MIT
 **Extension ID:** `stringknife`
@@ -537,11 +537,93 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
 
 ---
 
+## PR & CI Gate Policy
+
+All code changes enter the repository through Pull Requests. The following gates must pass before any PR can be merged.
+
+### Required CI Checks (GitHub Actions)
+
+Every PR triggers the CI pipeline (`.github/workflows/ci.yml`). **All checks are required — no merge without green.**
+
+| Check | Command | Blocking | Phase Introduced |
+|-------|---------|----------|-----------------|
+| **Build (WASM)** | `cargo check -p stringknife-ext --target wasm32-wasip1` | Yes | Phase 0 |
+| **Build (LSP)** | `cargo check -p stringknife-lsp` | Yes | Phase 0 |
+| **Unit Tests** | `cargo test --workspace` | Yes | Phase 0 |
+| **Lint (Clippy)** | `cargo clippy --workspace -- -D warnings` | Yes | Phase 0 |
+| **Format** | `cargo fmt --all -- --check` | Yes | Phase 0 |
+| **License/Advisory** | `cargo deny check` | Yes | Phase 0 |
+| **Security Audit** | `cargo audit` | Yes | Phase 0 |
+| **ARI Score** | `ariscan --format pr-comment` | Advisory (Phase 0–1), Blocking (Phase 2+) | Phase 0 |
+| **ARI Regression** | `ariscan --diff main` | Blocking (Phase 2+) | Phase 2 |
+| **Integration Tests** | `cargo test --test integration` | Yes (Phase 1+) | Phase 1 |
+| **Benchmark Regression** | `cargo bench -- --compare main` | Advisory | Phase 4 |
+
+### Branch Protection Rules
+
+Branch protection is configured on `main` from Phase 0 onward.
+
+- [ ] **Require PR reviews:** Minimum 1 approving review before merge
+- [ ] **Require status checks:** All CI checks listed above must pass
+- [ ] **Require branch up-to-date:** PR branch must be rebased on latest `main`
+- [ ] **No direct pushes to `main`:** All changes go through PRs (including maintainer)
+- [ ] **Require linear history:** Squash merge or rebase merge only — no merge commits
+- [ ] **Require signed commits:** All commits must be GPG or SSH signed (Phase 2+)
+- [ ] **Dismiss stale reviews:** Approvals dismissed when new commits are pushed
+- [ ] **Require conversation resolution:** All review comments must be resolved before merge
+
+### PR Process Checklist
+
+Every PR must include the following before requesting review:
+
+- [ ] **Title** follows conventional commit format: `feat:`, `fix:`, `refactor:`, `docs:`, `test:`, `chore:`
+- [ ] **Description** explains *what* changed and *why*
+- [ ] **Tests** — new/modified code has corresponding unit tests
+- [ ] **No `unsafe`** in `transforms/` crate (enforced by Clippy deny)
+- [ ] **No new dependencies** without justification in PR description and `cargo-deny` approval
+- [ ] **ARI score** does not regress below phase threshold
+- [ ] **Documentation** updated if public API changed (README feature table, rustdoc)
+- [ ] **Breaking changes** flagged with `BREAKING:` prefix in commit message
+
+### PR Labels & Automation
+
+| Label | Trigger | Action |
+|-------|---------|--------|
+| `ci:passed` | All CI checks green | Auto-applied by GitHub Actions |
+| `ari:regression` | ARI score decreased | Blocks merge, notifies maintainer |
+| `ari:improvement` | ARI score increased | Informational — shown in PR comment |
+| `needs-review` | PR opened/updated | Auto-applied, removed on approval |
+| `size/S`, `size/M`, `size/L`, `size/XL` | Lines changed | Auto-applied by size labeler |
+| `phase-N` | Files changed in phase scope | Auto-applied by path labeler |
+
+### CI Gate Escalation by Phase
+
+CI strictness increases as the project matures:
+
+| Phase | ARI Blocking | Benchmark Gate | Coverage Gate |
+|-------|-------------|----------------|---------------|
+| **0–1** | Advisory only | None | None |
+| **2–3** | Pillar scores ≥ phase target | Advisory | ≥ 70% on `transforms/` |
+| **4** | Pillar scores ≥ phase target | Warn on >10% regression | ≥ 80% on `transforms/` |
+| **5–6** | Pillar scores ≥ phase target | Block on >20% regression | ≥ 85% on `transforms/` |
+
+---
+
 ## Phase 0 — Project Bootstrap
 
 > **Goal:** Repository scaffolded, CI green, dev extension installable in Zed with a single no-op code action proving the full pipeline works end-to-end. ARI foundations laid from first commit.
 
 ### EPIC-0.1: Repository & Toolchain Setup
+
+**Priority:** Critical | **Impact:** Very High | **Effort:** Medium | **Risk:** Low
+**Source:** Product Roadmap v1 — Phase 0
+**Status:** Not Started
+**Dependencies:** None
+**AI-first benefit:** Deterministic repo structure enables agents to navigate and contribute from first clone.
+
+Establish the foundational repository structure, Zed extension manifest, and WASM crate so that the project compiles and can be installed as a dev extension in Zed. This is the skeleton upon which all subsequent phases build.
+
+#### Definition of Done
 
 - [ ] **T-001** — Initialise Git repository with `main` branch protection rules
 - [ ] **T-002** — Create `extension.toml` manifest
@@ -562,7 +644,24 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
 - [ ] **T-008** — Create `CHANGELOG.md` with `## [Unreleased]` section
 - [ ] **T-009** — Create `CONTRIBUTING.md` with dev setup instructions
 
+#### Verification
+
+- [ ] `cargo check` passes on the WASM crate without errors
+- [ ] `extension.toml` validates against Zed's extension schema
+- [ ] All files listed above exist at repository root
+- [ ] `.gitignore` excludes `target/`, `node_modules/`, `*.wasm`
+
 ### EPIC-0.2: ARI Foundations (Agent-Readiness from Day One)
+
+**Priority:** Critical | **Impact:** Very High | **Effort:** Medium | **Risk:** Low
+**Source:** Product Roadmap v1 — Phase 0
+**Status:** Not Started
+**Dependencies:** EPIC-0.1
+**AI-first benefit:** ARI-first setup ensures agents can reason about, test, and contribute to the codebase from the earliest commits.
+
+Lay the agent-readiness infrastructure: HINTS.md for LCI-compatible context, strict Clippy lints, structured error types, the transforms module skeleton, and cargo-deny/cargo-audit integration. Establish the ARI baseline score.
+
+#### Definition of Done
 
 - [ ] **T-025** — Create `HINTS.md` at repository root
   - [ ] Document repo structure and purpose of each directory
@@ -594,7 +693,25 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
   - [ ] Record baseline scores per pillar in `docs/ari/ARI-BASELINE.md`
   - [ ] Identify any pillar below 6.0 and create remediation tickets
 
+#### Verification
+
+- [ ] `cargo clippy -- -D warnings` passes with zero warnings
+- [ ] `cargo deny check` passes with zero violations
+- [ ] `ariscan` produces a valid ARI-BASELINE report
+- [ ] `HINTS.md` contains all four required documentation sections
+- [ ] `StringKnifeError` compiles with all three variants and `Display` impl
+
 ### EPIC-0.3: Language Server Skeleton
+
+**Priority:** Critical | **Impact:** Very High | **Effort:** High | **Risk:** Medium
+**Source:** Product Roadmap v1 — Phase 0
+**Status:** Not Started
+**Dependencies:** EPIC-0.1
+**AI-first benefit:** Clean LSP skeleton with typed handlers enables agents to add new code actions by following established patterns.
+
+Build the minimal LSP server binary that speaks the Language Server Protocol over stdio. This includes the initialize handshake, document sync, and an empty code action handler — proving the LSP ↔ Zed communication pipeline works.
+
+#### Definition of Done
 
 - [ ] **T-010** — Create `lsp/` directory for the LSP binary crate
 - [ ] **T-011** — Create `lsp/Cargo.toml`
@@ -614,7 +731,24 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
   - [ ] For dev: point to local `target/release/stringknife-lsp`
   - [ ] For published: implement binary download from GitHub Releases via `zed::download_file()`
 
+#### Verification
+
+- [ ] `cargo build -p stringknife-lsp` compiles without errors
+- [ ] `stringknife-lsp --stdio` starts and responds to LSP initialize request
+- [ ] Document store correctly tracks open/changed documents
+- [ ] Extension WASM locates and launches the LSP binary in dev mode
+
 ### EPIC-0.4: End-to-End Proof of Life
+
+**Priority:** Critical | **Impact:** Very High | **Effort:** Medium | **Risk:** Medium
+**Source:** Product Roadmap v1 — Phase 0
+**Status:** Not Started
+**Dependencies:** EPIC-0.2, EPIC-0.3
+**AI-first benefit:** Proves the full pipeline end-to-end, giving agents a working reference implementation to pattern-match against.
+
+Wire a single hardcoded code action ("Reverse String") through the entire stack: pure function in transforms → LSP code action handler → Zed context menu → text replacement. This proves the architecture works before investing in the full transform catalogue.
+
+#### Definition of Done
 
 - [ ] **T-016** — Add a single hardcoded code action: "StringKnife: Reverse String"
   - [ ] Implement as a pure function in `transforms/misc.rs`
@@ -627,7 +761,24 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
 - [ ] **T-020** — Verify selecting the action replaces text correctly
 - [ ] **T-035** — Document the dev install workflow in `CONTRIBUTING.md`
 
+#### Verification
+
+- [ ] `cargo test -p transforms` passes with reverse string tests green
+- [ ] Dev extension installed in Zed shows "StringKnife: Reverse String" in context menu
+- [ ] Selecting text and applying the action replaces it with the reversed string
+- [ ] Undo (Cmd+Z / Ctrl+Z) restores the original text
+
 ### EPIC-0.5: CI/CD Pipeline
+
+**Priority:** Critical | **Impact:** High | **Effort:** Medium | **Risk:** Low
+**Source:** Product Roadmap v1 — Phase 0
+**Status:** Not Started
+**Dependencies:** EPIC-0.1, EPIC-0.2, EPIC-0.3
+**AI-first benefit:** Automated CI with ariscan integration gives agents immediate feedback on whether their changes maintain quality standards.
+
+Set up GitHub Actions workflows for continuous integration (build, test, lint, audit), release automation (cross-compile for all platforms), ARI scoring on PRs, and Dependabot for dependency updates.
+
+#### Definition of Done
 
 - [ ] **T-021** — Create `.github/workflows/ci.yml`
   - [ ] Run `cargo check` on both WASM crate and LSP crate
@@ -648,8 +799,43 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
   - [ ] Fail PR if any pillar drops below its phase target threshold
   - [ ] Cache previous score for delta comparison
 - [ ] **T-024** — Add Dependabot config for Cargo dependency updates
+- [ ] **T-036** — Configure branch protection rules on `main`
+  - [ ] Require 1 approving PR review
+  - [ ] Require all CI status checks to pass
+  - [ ] Require branch to be up-to-date before merge
+  - [ ] Enforce squash merge (linear history)
+  - [ ] Disable direct pushes to `main`
+  - [ ] Enable dismiss stale reviews on new pushes
+  - [ ] Require conversation resolution before merge
+- [ ] **T-037** — Create `.github/pull_request_template.md`
+  - [ ] Include PR checklist (tests, no unsafe, docs updated, ARI check)
+  - [ ] Include conventional commit format guidance
+  - [ ] Include breaking change flag instructions
+- [ ] **T-038** — Create `.github/workflows/pr-labeler.yml`
+  - [ ] Auto-label PRs by size (S/M/L/XL)
+  - [ ] Auto-label PRs by phase scope based on changed file paths
+  - [ ] Apply `needs-review` label on PR open
+- [ ] **T-039** — Add merge queue configuration (optional, enabled when contributor count > 1)
+
+#### Verification
+
+- [ ] Push to `main` triggers CI workflow and all steps pass
+- [ ] Tagging `v0.0.1-test` triggers release workflow and produces binaries for all 5 targets
+- [ ] Opening a PR triggers ariscan workflow and posts ARI score comment
+- [ ] Dependabot opens a PR within 7 days for any outdated dependency
+- [ ] Direct push to `main` is rejected by branch protection
+- [ ] PR without passing CI checks cannot be merged
+- [ ] PR template renders correctly when opening a new PR
+- [ ] PR labels are automatically applied based on size and scope
 
 ### 🔒 GATE: ARI-0 Checkpoint
+
+**Priority:** Critical | **Impact:** Very High | **Effort:** Small | **Risk:** Medium
+**Source:** ARI Governance — Phase 0 exit gate
+**Status:** Not Started
+**Dependencies:** EPIC-0.1, EPIC-0.2, EPIC-0.3, EPIC-0.4, EPIC-0.5
+
+#### Definition of Done
 
 - [ ] **ARI-0** — Run `ariscan` — **minimum composite score ≥ 7.0**
   - [ ] Record scores in `docs/ari/ARI-0.md`
@@ -657,7 +843,20 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
   - [ ] Security pillar: **Pass** (no advisories, no unsafe, no panics in lib)
   - [ ] If below threshold: create remediation tickets, block Phase 1 entry
 
+#### Verification
+
+- [ ] `docs/ari/ARI-0.md` committed with per-pillar scores
+- [ ] Composite ARI score ≥ 7.0 confirmed
+- [ ] No pillar below 6.0
+
 ### 🔍 AUDIT: Dependency Audit #1
+
+**Priority:** High | **Impact:** High | **Effort:** Small | **Risk:** Low
+**Source:** Audit Schedule — Phase 0
+**Status:** Not Started
+**Dependencies:** EPIC-0.3 (LSP crate with dependencies established)
+
+#### Definition of Done
 
 - [ ] **A-001** — Run `cargo deny check` and review all transitive dependencies
   - [ ] Document total dependency count in `docs/audits/DEP-AUDIT-1.md`
@@ -665,7 +864,19 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
   - [ ] Flag any dependency with known CVE (even if not directly exploitable)
   - [ ] Confirm all licenses compatible with MIT
 
+#### Verification
+
+- [ ] `docs/audits/DEP-AUDIT-1.md` committed with dependency count and flagged items
+- [ ] `cargo deny check` returns zero violations
+
 ### 📋 PM REVIEW: PMR-0 — Foundation Review
+
+**Priority:** High | **Impact:** Very High | **Effort:** Small | **Risk:** Low
+**Source:** PM Governance Cadence
+**Status:** Not Started
+**Dependencies:** EPIC-0.4 (proof of life complete), ARI-0 (checkpoint passed)
+
+#### Definition of Done
 
 - [ ] **PMR-0** — Conduct Foundation Review
   - [ ] Validate LSP code action architecture works reliably in Zed
@@ -675,7 +886,12 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
   - [ ] Decision: Go/No-Go for Phase 1
   - [ ] Document decisions in `docs/pm-reviews/PMR-0.md`
 
-**Phase 0 Exit Criteria:** Dev extension installs in Zed. Selecting text → right-click → "StringKnife: Reverse String" works. CI is green. ARI ≥ 7.0. PMR-0 complete.
+#### Verification
+
+- [ ] `docs/pm-reviews/PMR-0.md` committed with Go/No-Go decision and evidence basis
+- [ ] Phase 1 scope confirmed or adjusted based on review
+
+**Phase 0 Exit Criteria:** Dev extension installs in Zed. Selecting text → right-click → "StringKnife: Reverse String" works. CI is green. Branch protection active on `main`. All PRs pass required CI checks. ARI ≥ 7.0. PMR-0 complete.
 
 ---
 
@@ -684,6 +900,16 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
 > **Goal:** Ship the essential encoding/decoding operations that cover 90% of daily string manipulation needs.
 
 ### EPIC-1.1: Base64 Operations
+
+**Priority:** Critical | **Impact:** Very High | **Effort:** Medium | **Risk:** Low
+**Source:** Product Roadmap v1 — Phase 1
+**Status:** Not Started
+**Dependencies:** EPIC-0.4 (proof of life pattern established)
+**AI-first benefit:** First real transform module establishes the pure-function pattern that agents replicate for every subsequent transform.
+
+Implement Base64 standard and URL-safe encoding/decoding as the first production transforms. These are the highest-frequency string operations developers perform and serve as the template for all subsequent transforms.
+
+#### Definition of Done
 
 - [ ] **T-100** — Implement `Base64 Encode` code action
   - [ ] Pure function in `transforms/base64.rs`
@@ -702,7 +928,24 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
   - [ ] Roundtrip encode→decode identity
   - [ ] Invalid input error paths (returns `Err`, never panics)
 
+#### Verification
+
+- [ ] `cargo test -p transforms -- base64` passes all tests
+- [ ] Roundtrip identity: `decode(encode(x)) == x` for all valid inputs
+- [ ] Invalid Base64 input returns `Err(StringKnifeError::InvalidInput)`, never panics
+- [ ] Code action appears in Zed context menu and replaces text correctly
+
 ### EPIC-1.2: URL Encoding Operations
+
+**Priority:** Critical | **Impact:** Very High | **Effort:** Medium | **Risk:** Low
+**Source:** Product Roadmap v1 — Phase 1
+**Status:** Not Started
+**Dependencies:** EPIC-0.4
+**AI-first benefit:** Uniform transform signature makes URL operations immediately discoverable and testable by agents.
+
+Implement URL percent-encoding and decoding per RFC 3986, including component encoding. These are essential for web development workflows.
+
+#### Definition of Done
 
 - [ ] **T-110** — Implement `URL Encode` code action (percent-encoding, RFC 3986)
   - [ ] Pure function in `transforms/url.rs`
@@ -715,7 +958,21 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
   - [ ] Already-encoded input (double-encoding prevention awareness — document behavior)
   - [ ] Roundtrip identity
 
+#### Verification
+
+- [ ] `cargo test -p transforms -- url` passes all tests
+- [ ] RFC 3986 reserved characters are correctly percent-encoded
+- [ ] `+` and `%20` both decode to space correctly
+- [ ] Code action works in Zed context menu
+
 ### 📋 PM REVIEW: PMR-1 — MVP Scope Check (Mid-Phase)
+
+**Priority:** High | **Impact:** Very High | **Effort:** Small | **Risk:** Low
+**Source:** PM Governance Cadence
+**Status:** Not Started
+**Dependencies:** EPIC-1.1, EPIC-1.2 (first two transform EPICs shipped)
+
+#### Definition of Done
 
 - [ ] **PMR-1** — Conduct MVP Scope Review
   - [ ] User-test with 2–3 developers: are Base64 and URL the right first operations?
@@ -726,7 +983,22 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
   - [ ] Promote any backlog items that early users are requesting
   - [ ] Document decisions in `docs/pm-reviews/PMR-1.md`
 
+#### Verification
+
+- [ ] `docs/pm-reviews/PMR-1.md` committed with scope decisions and user feedback summary
+- [ ] Remaining Phase 1 EPICs confirmed or reprioritised
+
 ### EPIC-1.3: HTML Entity Operations
+
+**Priority:** High | **Impact:** High | **Effort:** Medium | **Risk:** Low
+**Source:** Product Roadmap v1 — Phase 1
+**Status:** Not Started
+**Dependencies:** EPIC-0.4
+**AI-first benefit:** Follows established transform pattern — agents can implement by analogy with Base64 module.
+
+Implement HTML entity encoding and decoding, supporting named, decimal, and hex numeric entities. Essential for web developers working with HTML content.
+
+#### Definition of Done
 
 - [ ] **T-120** — Implement `HTML Encode` code action
   - [ ] Pure function in `transforms/html.rs`
@@ -740,7 +1012,24 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
   - [ ] Nested/compound encoding
   - [ ] Malformed entities (pass through unchanged)
 
+#### Verification
+
+- [ ] `cargo test -p transforms -- html` passes all tests
+- [ ] All five named entities (`& < > " '`) encode and decode correctly
+- [ ] Malformed entities pass through unchanged without error
+- [ ] Code action works in Zed context menu
+
 ### EPIC-1.4: Hex Operations
+
+**Priority:** High | **Impact:** High | **Effort:** Small | **Risk:** Low
+**Source:** Product Roadmap v1 — Phase 1
+**Status:** Not Started
+**Dependencies:** EPIC-0.4
+**AI-first benefit:** Small, self-contained module — ideal for agent-driven implementation following existing patterns.
+
+Implement hex encoding (UTF-8 bytes to hex string) and decoding (hex string to UTF-8 text), with support for `0x` prefix and space-separated byte formats.
+
+#### Definition of Done
 
 - [ ] **T-130** — Implement `Hex Encode` code action (UTF-8 bytes → hex string)
   - [ ] Pure function in `transforms/hex.rs`
@@ -750,7 +1039,24 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
   - [ ] Error on invalid hex characters
 - [ ] **T-132** — Unit tests for hex operations
 
+#### Verification
+
+- [ ] `cargo test -p transforms -- hex` passes all tests
+- [ ] `0x` prefix handled correctly in both directions
+- [ ] Invalid hex characters return `Err`, never panic
+- [ ] Roundtrip identity confirmed
+
 ### EPIC-1.5: Unicode Operations
+
+**Priority:** High | **Impact:** High | **Effort:** Medium | **Risk:** Low
+**Source:** Product Roadmap v1 — Phase 1
+**Status:** Not Started
+**Dependencies:** EPIC-0.4
+**AI-first benefit:** Unicode edge cases (emoji, BMP, combining chars) provide rich test vectors for agent-generated tests.
+
+Implement Unicode escape/unescape operations and a codepoint inspector. Supports `\uXXXX` (JavaScript/Java) and `\UXXXXXXXX` (chars above BMP) formats.
+
+#### Definition of Done
 
 - [ ] **T-140** — Implement `Unicode Escape` code action (`Hello` → `\u0048\u0065\u006C\u006C\u006F`)
   - [ ] Pure function in `transforms/unicode.rs`
@@ -765,7 +1071,24 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
   - [ ] CJK characters
   - [ ] Combining characters
 
+#### Verification
+
+- [ ] `cargo test -p transforms -- unicode` passes all tests
+- [ ] Emoji and multi-codepoint sequences roundtrip correctly
+- [ ] Codepoint inspector displays correct U+XXXX values
+- [ ] Non-escape text preserved unchanged during unescape
+
 ### EPIC-1.6: Code Action Categorisation & UX
+
+**Priority:** Critical | **Impact:** Very High | **Effort:** Medium | **Risk:** Medium
+**Source:** Product Roadmap v1 — Phase 1
+**Status:** Not Started
+**Dependencies:** EPIC-1.1, EPIC-1.2, EPIC-1.3, EPIC-1.4, EPIC-1.5
+**AI-first benefit:** Smart detection heuristics make the extension self-organising — agents can add new detection patterns by following existing ones.
+
+Implement the smart detection system that surfaces relevant decode actions based on the selected text pattern, group all actions under the "StringKnife:" prefix, and handle edge cases like multi-line and empty selections.
+
+#### Definition of Done
 
 - [ ] **T-150** — Group code actions under `"StringKnife"` category in the code action response
   - [ ] Use `CodeActionKind::REFACTOR` as the base kind
@@ -780,7 +1103,22 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
 - [ ] **T-153** — Handle multi-line selections correctly
 - [ ] **T-154** — Handle empty selection (no code actions returned)
 
+#### Verification
+
+- [ ] Selecting Base64 text surfaces "Base64 Decode" at top of context menu
+- [ ] Selecting URL-encoded text surfaces "URL Decode" at top
+- [ ] All encode actions always visible regardless of selection
+- [ ] Empty selection returns zero code actions
+- [ ] Multi-line selection produces correct WorkspaceEdit range
+
 ### 🔒 GATE: ARI-1 Checkpoint
+
+**Priority:** Critical | **Impact:** Very High | **Effort:** Small | **Risk:** Medium
+**Source:** ARI Governance — Phase 1 exit gate
+**Status:** Not Started
+**Dependencies:** EPIC-1.1, EPIC-1.2, EPIC-1.3, EPIC-1.4, EPIC-1.5, EPIC-1.6
+
+#### Definition of Done
 
 - [ ] **ARI-1** — Run `ariscan` — **minimum composite score ≥ 7.5**
   - [ ] Record scores in `docs/ari/ARI-1.md`
@@ -789,7 +1127,20 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
   - [ ] Compare delta against ARI-0 — no pillar should have regressed
   - [ ] If below threshold: remediation sprint before Phase 2 entry
 
+#### Verification
+
+- [ ] `docs/ari/ARI-1.md` committed with per-pillar scores and delta from ARI-0
+- [ ] Composite ARI score ≥ 7.5 confirmed
+- [ ] No pillar regression from ARI-0
+
 ### 🔍 AUDIT: Code Quality Audit #1
+
+**Priority:** High | **Impact:** High | **Effort:** Small | **Risk:** Low
+**Source:** Audit Schedule — Phase 1
+**Status:** Not Started
+**Dependencies:** EPIC-1.1, EPIC-1.2, EPIC-1.3, EPIC-1.4, EPIC-1.5, EPIC-1.6
+
+#### Definition of Done
 
 - [ ] **A-010** — Code Quality Audit
   - [ ] Run `cargo clippy` — zero warnings
@@ -798,7 +1149,13 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
   - [ ] Verify all public functions have rustdoc comments
   - [ ] Document findings in `docs/audits/CODE-QUALITY-1.md`
 
-**Phase 1 Exit Criteria:** All encoding/decoding actions work. Smart detection suggests relevant decode operations. Full unit test coverage. ARI ≥ 7.5. PMR-1 complete.
+#### Verification
+
+- [ ] `docs/audits/CODE-QUALITY-1.md` committed with coverage metrics and findings
+- [ ] `cargo clippy -- -D warnings` passes
+- [ ] Test coverage ≥ 80% on `transforms/` confirmed
+
+**Phase 1 Exit Criteria:** All encoding/decoding actions work. Smart detection suggests relevant decode operations. Full unit test coverage. All CI checks pass on every PR. Integration tests added to CI pipeline. ARI ≥ 7.5. PMR-1 complete.
 
 ---
 
@@ -807,6 +1164,16 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
 > **Goal:** Expand into hashing, JWT inspection, and data format conversions that developers reach for daily.
 
 ### EPIC-2.1: Hash Operations (One-Way)
+
+**Priority:** High | **Impact:** High | **Effort:** Medium | **Risk:** Low
+**Source:** Product Roadmap v1 — Phase 2
+**Status:** Not Started
+**Dependencies:** EPIC-0.4 (transform pattern established)
+**AI-first benefit:** Hash transforms are stateless and deterministic — perfect for agent-generated test vectors from known RFCs.
+
+Implement one-way hash operations (MD5, SHA-1, SHA-256, SHA-512, CRC32) as code actions. Each replaces the selected text with its hex digest. These are developer-essential for verifying checksums, debugging API signatures, and quick hash comparisons.
+
+#### Definition of Done
 
 - [ ] **T-200** — Implement `MD5 Hash` code action
   - [ ] Pure function in `transforms/hash.rs`
@@ -821,7 +1188,24 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
   - [ ] Empty string hash
   - [ ] Unicode input
 
+#### Verification
+
+- [ ] `cargo test -p transforms -- hash` passes all tests
+- [ ] MD5/SHA outputs match NIST test vectors exactly
+- [ ] Empty string produces correct hash for each algorithm
+- [ ] Code actions work in Zed context menu
+
 ### EPIC-2.2: JWT Operations (Read-Only Decode)
+
+**Priority:** High | **Impact:** High | **Effort:** Medium | **Risk:** Low
+**Source:** Product Roadmap v1 — Phase 2
+**Status:** Not Started
+**Dependencies:** EPIC-0.4, EPIC-1.1 (Base64 decode needed internally)
+**AI-first benefit:** JWT decode is a composition of existing Base64 + JSON transforms — demonstrates module composability.
+
+Implement read-only JWT decoding (header, payload, full). No signature verification — only structural decode. This is a differentiating feature for developers debugging OAuth flows, API tokens, and authentication issues.
+
+#### Definition of Done
 
 - [ ] **T-210** — Implement `JWT Decode Header` code action
   - [ ] Pure function in `transforms/jwt.rs`
@@ -841,7 +1225,24 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
   - [ ] Expired token (still decodes, just shows expired date)
   - [ ] Malformed token (missing sections)
 
+#### Verification
+
+- [ ] `cargo test -p transforms -- jwt` passes all tests
+- [ ] Valid JWT decodes to correct header and payload JSON
+- [ ] Malformed JWT returns structured error, never panics
+- [ ] Timestamp fields (`exp`, `iat`, `nbf`) display as human-readable dates
+
 ### EPIC-2.3: JSON Operations
+
+**Priority:** Critical | **Impact:** Very High | **Effort:** Medium | **Risk:** Low
+**Source:** Product Roadmap v1 — Phase 2
+**Status:** Not Started
+**Dependencies:** EPIC-0.4
+**AI-first benefit:** JSON transforms are the most frequently used data format operations — high-value, low-risk for agent contributions.
+
+Implement JSON pretty print, minify, escape/unescape, and cross-format conversions (JSON ↔ YAML). These are the most commonly needed data format operations for developers working with APIs, configs, and data pipelines.
+
+#### Definition of Done
 
 - [ ] **T-220** — Implement `JSON Pretty Print` code action
   - [ ] Pure function in `transforms/json.rs`
@@ -858,21 +1259,68 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
   - [ ] Large payloads (performance)
   - [ ] Invalid JSON error handling
 
+#### Verification
+
+- [ ] `cargo test -p transforms -- json` passes all tests
+- [ ] Pretty print produces valid, readable JSON with 2-space indent
+- [ ] Minify removes all unnecessary whitespace
+- [ ] JSON ↔ YAML roundtrip preserves data integrity
+- [ ] Invalid JSON returns structured error
+
 ### EPIC-2.4: XML/HTML Operations
+
+**Priority:** Medium | **Impact:** Medium | **Effort:** Small | **Risk:** Low
+**Source:** Product Roadmap v1 — Phase 2
+**Status:** Not Started
+**Dependencies:** EPIC-0.4
+**AI-first benefit:** Small, isolated module with clear input/output — straightforward for agent implementation.
+
+Implement XML pretty print and minify operations for developers working with XML configs, SOAP services, or HTML templates.
+
+#### Definition of Done
 
 - [ ] **T-230** — Implement `XML Pretty Print` code action
   - [ ] Pure function in `transforms/xml.rs`
 - [ ] **T-231** — Implement `XML Minify` code action
 - [ ] **T-232** — Unit tests for XML operations
 
+#### Verification
+
+- [ ] `cargo test -p transforms -- xml` passes all tests
+- [ ] Nested XML elements are correctly indented
+- [ ] Minified XML is valid and parseable
+
 ### EPIC-2.5: TOML/CSV Utility Operations
+
+**Priority:** Medium | **Impact:** Medium | **Effort:** Small | **Risk:** Low
+**Source:** Product Roadmap v1 — Phase 2
+**Status:** Not Started
+**Dependencies:** EPIC-0.4
+**AI-first benefit:** Format conversion transforms are pure data-in/data-out — trivially testable by agents.
+
+Implement cross-format conversions: TOML ↔ JSON and CSV → JSON Array. These fill common gaps when developers need to convert between configuration and data formats.
+
+#### Definition of Done
 
 - [ ] **T-240** — Implement `TOML → JSON` code action
 - [ ] **T-241** — Implement `JSON → TOML` code action
 - [ ] **T-242** — Implement `CSV → JSON Array` code action (first row as headers)
 - [ ] **T-243** — Unit tests for format conversion operations
 
+#### Verification
+
+- [ ] `cargo test -p transforms` passes for TOML and CSV tests
+- [ ] TOML ↔ JSON roundtrip preserves data types
+- [ ] CSV with headers correctly maps to JSON array of objects
+
 ### 🔍 AUDIT: Architecture Audit #1
+
+**Priority:** High | **Impact:** High | **Effort:** Medium | **Risk:** Low
+**Source:** Audit Schedule — Phase 2
+**Status:** Not Started
+**Dependencies:** EPIC-2.1, EPIC-2.2, EPIC-2.3, EPIC-2.4, EPIC-2.5
+
+#### Definition of Done
 
 - [ ] **A-020** — Architecture Audit
   - [ ] Review module boundaries: are transforms fully decoupled from LSP types?
@@ -882,7 +1330,20 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
   - [ ] Assess: could `transforms/` be published as a standalone crate for reuse?
   - [ ] Document findings in `docs/audits/ARCH-AUDIT-1.md`
 
+#### Verification
+
+- [ ] `docs/audits/ARCH-AUDIT-1.md` committed with profiling data and boundary analysis
+- [ ] All operations complete in < 50ms for 10KB input
+- [ ] No LSP types found in `transforms/` crate
+
 ### 🔍 AUDIT: Security Audit #1
+
+**Priority:** Critical | **Impact:** Very High | **Effort:** Medium | **Risk:** Low
+**Source:** Audit Schedule — Phase 2
+**Status:** Not Started
+**Dependencies:** EPIC-2.1, EPIC-2.2, EPIC-2.3
+
+#### Definition of Done
 
 - [ ] **A-021** — Security Audit
   - [ ] Run `cargo audit` — zero advisories
@@ -892,7 +1353,20 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
   - [ ] Fuzz test Base64 decode, URL decode, and JSON parse with `cargo-fuzz` (minimum 10 minutes per target)
   - [ ] Document findings in `docs/audits/SECURITY-AUDIT-1.md`
 
+#### Verification
+
+- [ ] `docs/audits/SECURITY-AUDIT-1.md` committed with fuzz test results
+- [ ] `cargo audit` and `cargo deny check` return zero issues
+- [ ] `grep -r "unsafe" transforms/` returns zero matches
+
 ### 🔍 AUDIT: Dependency Audit #2
+
+**Priority:** High | **Impact:** High | **Effort:** Small | **Risk:** Low
+**Source:** Audit Schedule — Phase 2
+**Status:** Not Started
+**Dependencies:** EPIC-2.1, EPIC-2.2, EPIC-2.3, EPIC-2.4, EPIC-2.5
+
+#### Definition of Done
 
 - [ ] **A-022** — Dependency Audit
   - [ ] Review all new dependencies added in Phase 2
@@ -901,7 +1375,19 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
   - [ ] Flag any dep with fewer than 100 downloads/week (supply chain risk)
   - [ ] Document in `docs/audits/DEP-AUDIT-2.md`
 
+#### Verification
+
+- [ ] `docs/audits/DEP-AUDIT-2.md` committed with dependency delta analysis
+- [ ] No new license incompatibilities detected
+
 ### 📋 PM REVIEW: PMR-2 — Feature Velocity Check
+
+**Priority:** High | **Impact:** High | **Effort:** Small | **Risk:** Low
+**Source:** PM Governance Cadence
+**Status:** Not Started
+**Dependencies:** EPIC-2.1, EPIC-2.2, EPIC-2.3, EPIC-2.4, EPIC-2.5, A-020, A-021
+
+#### Definition of Done
 
 - [ ] **PMR-2** — Conduct Feature Velocity Check
   - [ ] Review actual velocity: how long did Phase 2 take vs. estimate?
@@ -913,7 +1399,12 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
   - [ ] Decision: cut, defer, or accelerate Phase 3 items
   - [ ] Document decisions in `docs/pm-reviews/PMR-2.md`
 
-**Phase 2 Exit Criteria:** All hash, JWT, and format conversion operations functional. Error handling is graceful across all actions. Architecture audit passed. Security audit passed.
+#### Verification
+
+- [ ] `docs/pm-reviews/PMR-2.md` committed with velocity analysis and Phase 3 scope decisions
+- [ ] Backlog items reviewed and promotion decisions documented
+
+**Phase 2 Exit Criteria:** All hash, JWT, and format conversion operations functional. Error handling is graceful across all actions. ARI score blocking enabled on PRs. Signed commits required. Architecture audit passed. Security audit passed. Test coverage ≥ 70% on `transforms/`.
 
 ---
 
@@ -922,6 +1413,16 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
 > **Goal:** The string manipulation operations developers use when refactoring — case conversions, whitespace operations, text analysis.
 
 ### EPIC-3.1: Case Conversions
+
+**Priority:** High | **Impact:** Very High | **Effort:** Medium | **Risk:** Low
+**Source:** Product Roadmap v1 — Phase 3
+**Status:** Not Started
+**Dependencies:** EPIC-0.4
+**AI-first benefit:** 13 case variants from a single module — agents can generate all variants by understanding the word-boundary splitting algorithm once.
+
+Implement the full suite of case conversions (13 variants) that developers use when refactoring identifiers between naming conventions. Proper word boundary detection (camelCase splits, acronym handling, number boundaries) is the core challenge.
+
+#### Definition of Done
 
 - [ ] **T-300** — Implement `To UPPERCASE` code action
   - [ ] Pure function in `transforms/case.rs`
@@ -944,7 +1445,24 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
   - [ ] Unicode case mapping (ß → SS, İ → i)
   - [ ] Numbers in identifiers (`myVar2Name` → `my_var_2_name`)
 
+#### Verification
+
+- [ ] `cargo test -p transforms -- case` passes all tests
+- [ ] Acronym handling: `HTTPSConnection` → `https_connection` → `HttpsConnection`
+- [ ] Number boundary: `myVar2Name` → `my_var_2_name` → `myVar2Name`
+- [ ] All 13 case variants produce correct output in Zed context menu
+
 ### EPIC-3.2: Whitespace & Line Operations
+
+**Priority:** High | **Impact:** High | **Effort:** Medium | **Risk:** Low
+**Source:** Product Roadmap v1 — Phase 3
+**Status:** Not Started
+**Dependencies:** EPIC-0.4
+**AI-first benefit:** Line operations are pure text transforms with no encoding complexity — agents can implement and test each independently.
+
+Implement whitespace manipulation and line-level operations: trim, collapse, sort, deduplicate, reverse, shuffle, and number lines. These are daily-use operations for cleaning up data, logs, and text.
+
+#### Definition of Done
 
 - [ ] **T-320** — Implement `Trim Whitespace` code action (leading + trailing)
   - [ ] Pure function in `transforms/whitespace.rs`
@@ -961,7 +1479,24 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
 - [ ] **T-331** — Implement `Number Lines` code action (prefix each line with its number)
 - [ ] **T-332** — Unit tests for whitespace and line operations
 
+#### Verification
+
+- [ ] `cargo test -p transforms -- whitespace` passes all tests
+- [ ] Sort operations handle Unicode collation correctly
+- [ ] Remove Duplicate Lines preserves first occurrence and original order
+- [ ] Line operations handle trailing newline edge cases
+
 ### EPIC-3.3: String Inspection (Non-Destructive)
+
+**Priority:** Medium | **Impact:** Medium | **Effort:** Small | **Risk:** Low
+**Source:** Product Roadmap v1 — Phase 3
+**Status:** Not Started
+**Dependencies:** EPIC-0.4, EPIC-1.6 (detection module)
+**AI-first benefit:** Inspection outputs are structured data — agents can validate them programmatically.
+
+Implement non-destructive string inspection actions that display information (character count, byte length, encoding detection) without modifying the selected text. Results are shown via Zed notifications or diagnostics.
+
+#### Definition of Done
 
 - [ ] **T-340** — Implement `Count Characters` code action
   - [ ] Pure function in `transforms/inspect.rs`
@@ -971,7 +1506,24 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
 - [ ] **T-342** — Implement `Detect Encoding` code action (attempt to identify if selection is Base64, URL-encoded, hex, JWT, etc.)
 - [ ] **T-343** — Unit tests for inspection operations
 
+#### Verification
+
+- [ ] `cargo test -p transforms -- inspect` passes all tests
+- [ ] Count Characters correctly differentiates chars vs. bytes for multi-byte UTF-8
+- [ ] Detect Encoding correctly identifies Base64, URL-encoded, hex, and JWT patterns
+- [ ] Inspection actions do NOT modify the selected text
+
 ### EPIC-3.4: Escape/Unescape Operations
+
+**Priority:** High | **Impact:** High | **Effort:** Medium | **Risk:** Low
+**Source:** Product Roadmap v1 — Phase 3
+**Status:** Not Started
+**Dependencies:** EPIC-0.4
+**AI-first benefit:** Escape operations have well-defined specs (regex metacharacters, SQL quoting rules) — agents can implement from specification.
+
+Implement escape and unescape operations for common contexts: backslashes, regex metacharacters, SQL strings, shell strings, and CSV fields. Essential for developers constructing queries, patterns, and data exports.
+
+#### Definition of Done
 
 - [ ] **T-350** — Implement `Escape Backslashes` code action (`\` → `\\`)
   - [ ] Pure function in `transforms/escape.rs`
@@ -982,7 +1534,21 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
 - [ ] **T-355** — Implement `Escape CSV Field` code action
 - [ ] **T-356** — Unit tests for escape operations
 
+#### Verification
+
+- [ ] `cargo test -p transforms -- escape` passes all tests
+- [ ] Regex escape handles all metacharacters: `. * + ? ^ $ { } [ ] ( ) | \`
+- [ ] SQL escape doubles single quotes correctly
+- [ ] Shell escape handles spaces, quotes, and special characters
+
 ### 🔒 GATE: ARI-2 Checkpoint
+
+**Priority:** Critical | **Impact:** Very High | **Effort:** Small | **Risk:** Medium
+**Source:** ARI Governance — Phase 3 exit gate
+**Status:** Not Started
+**Dependencies:** EPIC-3.1, EPIC-3.2, EPIC-3.3, EPIC-3.4
+
+#### Definition of Done
 
 - [ ] **ARI-2** — Run `ariscan` — **minimum composite score ≥ 8.0**
   - [ ] Record scores in `docs/ari/ARI-2.md`
@@ -992,7 +1558,20 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
   - [ ] Delta report against ARI-1 — flag any regressions
   - [ ] If below 8.0: **architectural review required** before Phase 4
 
+#### Verification
+
+- [ ] `docs/ari/ARI-2.md` committed with per-pillar scores and delta from ARI-1
+- [ ] Composite ARI score ≥ 8.0 confirmed
+- [ ] No pillar regression from ARI-1
+
 ### 🔍 AUDIT: Code Quality Audit #2
+
+**Priority:** High | **Impact:** High | **Effort:** Small | **Risk:** Low
+**Source:** Audit Schedule — Phase 3
+**Status:** Not Started
+**Dependencies:** EPIC-3.1, EPIC-3.2, EPIC-3.3, EPIC-3.4
+
+#### Definition of Done
 
 - [ ] **A-030** — Code Quality Audit
   - [ ] Test coverage ≥ 85% on `transforms/` module
@@ -1002,7 +1581,20 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
   - [ ] Review code action naming: is the `StringKnife:` prefix consistent?
   - [ ] Document findings in `docs/audits/CODE-QUALITY-2.md`
 
+#### Verification
+
+- [ ] `docs/audits/CODE-QUALITY-2.md` committed with coverage metrics
+- [ ] Test coverage ≥ 85% on `transforms/` confirmed
+- [ ] `cargo clippy -- -D warnings` passes
+
 ### 🔍 AUDIT: UX Audit #1
+
+**Priority:** High | **Impact:** Very High | **Effort:** Medium | **Risk:** Low
+**Source:** Audit Schedule — Phase 3
+**Status:** Not Started
+**Dependencies:** EPIC-3.1, EPIC-3.2, EPIC-3.3, EPIC-3.4, EPIC-1.6
+
+#### Definition of Done
 
 - [ ] **A-031** — UX Audit
   - [ ] Install extension on a clean Zed instance
@@ -1013,7 +1605,13 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
   - [ ] Test with multi-line selections, single character, entire file selected
   - [ ] Document findings and recommendations in `docs/audits/UX-AUDIT-1.md`
 
-**Phase 3 Exit Criteria:** All case, whitespace, and escape operations functional. Inspection actions return info without modifying text. ARI ≥ 8.0. UX audit complete.
+#### Verification
+
+- [ ] `docs/audits/UX-AUDIT-1.md` committed with discoverability metrics and recommendations
+- [ ] Code action count documented — is it manageable or overwhelming?
+- [ ] Error message clarity validated by non-expert developer
+
+**Phase 3 Exit Criteria:** All case, whitespace, and escape operations functional. Inspection actions return info without modifying text. ARI ≥ 8.0. UX audit complete. Test coverage ≥ 70% on `transforms/`.
 
 ---
 
@@ -1022,6 +1620,16 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
 > **Goal:** User-configurable behavior, performant operation on large selections, and production-quality error handling.
 
 ### EPIC-4.1: Extension Configuration
+
+**Priority:** High | **Impact:** High | **Effort:** Medium | **Risk:** Low
+**Source:** Product Roadmap v1 — Phase 4
+**Status:** Not Started
+**Dependencies:** EPIC-0.3 (LSP config plumbing)
+**AI-first benefit:** Typed configuration schema with defaults makes agent-driven config changes safe and predictable.
+
+Define and implement the LSP configuration schema, allowing users to customise behavior through Zed's `settings.json`. Includes category filtering, smart detection toggle, output format preferences, and live config reload.
+
+#### Definition of Done
 
 - [ ] **T-400** — Define LSP configuration schema (`initializationOptions`)
   - [ ] `stringknife.enabledCategories`: array of enabled categories (encoding, hashing, case, json, etc.)
@@ -1035,7 +1643,24 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
 - [ ] **T-403** — Document all configuration options in README
 - [ ] **T-404** — Add example Zed `settings.json` snippet to README
 
+#### Verification
+
+- [ ] Changing `settings.json` updates behavior without restarting Zed
+- [ ] Disabling a category removes its code actions from the context menu
+- [ ] Default values work correctly when no config is provided
+- [ ] README configuration reference table matches actual behavior
+
 ### EPIC-4.2: Performance & Large Input Handling
+
+**Priority:** High | **Impact:** Very High | **Effort:** Medium | **Risk:** Medium
+**Source:** Product Roadmap v1 — Phase 4
+**Status:** Not Started
+**Dependencies:** EPIC-1.1 through EPIC-3.4 (all transforms implemented)
+**AI-first benefit:** Performance benchmarks provide quantitative pass/fail criteria for agent-driven optimisations.
+
+Benchmark all operations, enforce the 100ms/100KB performance contract, set input size limits, and optimise memory usage for sustained operation.
+
+#### Definition of Done
 
 - [ ] **T-410** — Benchmark code action response time for 1KB, 10KB, 100KB, 1MB selections
 - [ ] **T-411** — Set maximum input size limit (default: 1MB) with clear error message
@@ -1043,7 +1668,24 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
 - [ ] **T-413** — Profile memory usage under sustained operation
 - [ ] **T-414** — Add timeout handling for code action computation (5 second max)
 
+#### Verification
+
+- [ ] All operations complete in < 100ms for 100KB input (benchmark proof)
+- [ ] Selections > 1MB return `InputTooLarge` error via `window/showMessage`
+- [ ] Memory usage remains stable after 1000 sequential code actions
+- [ ] Timeout fires at 5 seconds for pathological inputs
+
 ### EPIC-4.3: Error Handling & User Feedback
+
+**Priority:** High | **Impact:** High | **Effort:** Medium | **Risk:** Low
+**Source:** Product Roadmap v1 — Phase 4
+**Status:** Not Started
+**Dependencies:** EPIC-0.3 (LSP error mapping)
+**AI-first benefit:** Structured error responses make failure modes explicit and testable by agents.
+
+Define the error response strategy, implement user-facing notifications for failed operations, ensure zero panics under any input, and add structured logging.
+
+#### Definition of Done
 
 - [ ] **T-420** — Define error response strategy: return `Diagnostic` for decode errors vs. silent skip
 - [ ] **T-421** — Implement `window/showMessage` notifications for operations that fail on invalid input
@@ -1051,14 +1693,45 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
 - [ ] **T-423** — Add structured logging to LSP (`tracing` crate, configurable log level)
 - [ ] **T-424** — Log level configurable via `stringknife.logLevel` setting
 
+#### Verification
+
+- [ ] Invalid input shows helpful error message via `window/showMessage`
+- [ ] `cargo-fuzz` runs for 30+ minutes on all decode paths with zero panics
+- [ ] Log output includes structured fields (operation, input_size, duration)
+- [ ] Log level changes via config without restart
+
 ### EPIC-4.4: Multi-Selection Support
+
+**Priority:** Medium | **Impact:** High | **Effort:** Medium | **Risk:** Medium
+**Source:** Product Roadmap v1 — Phase 4
+**Status:** Not Started
+**Dependencies:** EPIC-0.3 (LSP WorkspaceEdit handling)
+**AI-first benefit:** Multi-selection support tests the LSP protocol edge cases that agents need to handle correctly.
+
+Enable code actions to work with multiple cursor selections simultaneously, returning a `WorkspaceEdit` with multiple `TextEdit` entries. Handle overlapping ranges gracefully.
+
+#### Definition of Done
 
 - [ ] **T-430** — Handle multiple selection ranges in a single `codeAction` request
 - [ ] **T-431** — Return `WorkspaceEdit` with multiple `TextEdit` entries (one per selection)
 - [ ] **T-432** — Test multi-cursor encode/decode operations
 - [ ] **T-433** — Ensure edits don't conflict when ranges overlap (reject with message)
 
+#### Verification
+
+- [ ] Multi-cursor Base64 encode applies to all selections simultaneously
+- [ ] Overlapping ranges are rejected with a clear error message
+- [ ] Undo reverts all multi-cursor edits in a single step
+- [ ] Performance remains within budget with 10+ simultaneous selections
+
 ### 🔍 AUDIT: Architecture Audit #2
+
+**Priority:** High | **Impact:** High | **Effort:** Medium | **Risk:** Low
+**Source:** Audit Schedule — Phase 4
+**Status:** Not Started
+**Dependencies:** EPIC-4.1, EPIC-4.2, EPIC-4.3, EPIC-4.4
+
+#### Definition of Done
 
 - [ ] **A-040** — Architecture Audit
   - [ ] Review configuration plumbing: is it clean or spaghetti?
@@ -1067,7 +1740,20 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
   - [ ] Benchmark: all operations < 100ms for 100KB input (hard requirement)
   - [ ] Document findings in `docs/audits/ARCH-AUDIT-2.md`
 
+#### Verification
+
+- [ ] `docs/audits/ARCH-AUDIT-2.md` committed with benchmark data and memory profile
+- [ ] No memory leaks detected under sustained operation
+- [ ] Performance contract met for all operations
+
 ### 🔍 AUDIT: Dependency Audit #3
+
+**Priority:** High | **Impact:** High | **Effort:** Small | **Risk:** Low
+**Source:** Audit Schedule — Phase 4
+**Status:** Not Started
+**Dependencies:** EPIC-4.1, EPIC-4.3 (new deps for config/logging)
+
+#### Definition of Done
 
 - [ ] **A-041** — Dependency Audit
   - [ ] Full transitive dependency audit
@@ -1075,7 +1761,20 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
   - [ ] Verify `tracing` dependency is justified vs. simpler logging
   - [ ] Document in `docs/audits/DEP-AUDIT-3.md`
 
+#### Verification
+
+- [ ] `docs/audits/DEP-AUDIT-3.md` committed with transitive dep count
+- [ ] `tracing` justification documented
+- [ ] `cargo deny check` passes
+
 ### 📋 PM REVIEW: PMR-3 — Pre-Launch Review
+
+**Priority:** Critical | **Impact:** Very High | **Effort:** Small | **Risk:** Low
+**Source:** PM Governance Cadence
+**Status:** Not Started
+**Dependencies:** EPIC-4.1, EPIC-4.2, EPIC-4.3, EPIC-4.4, A-040, A-041
+
+#### Definition of Done
 
 - [ ] **PMR-3** — Conduct Pre-Launch Review
   - [ ] Full feature inventory: what's shipping in v0.5.0?
@@ -1089,7 +1788,13 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
   - [ ] Marketing checklist: where to announce, who to tell
   - [ ] Document decisions in `docs/pm-reviews/PMR-3.md`
 
-**Phase 4 Exit Criteria:** Extension is configurable, performant on large inputs, handles errors gracefully, and supports multi-cursor. Architecture audit passed. Pre-launch scope locked.
+#### Verification
+
+- [ ] `docs/pm-reviews/PMR-3.md` committed with v0.5.0 scope lock and kill list
+- [ ] README reviewed and updated for store-readiness
+- [ ] Demo assets created and reviewed
+
+**Phase 4 Exit Criteria:** Extension is configurable, performant on large inputs, handles errors gracefully, and supports multi-cursor. Benchmark regression gate active on PRs. Test coverage ≥ 80% on `transforms/`. Architecture audit passed. Pre-launch scope locked.
 
 ---
 
@@ -1098,6 +1803,16 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
 > **Goal:** Extension published to the Zed Extension Store, discoverable, documented, and ready for community contributions.
 
 ### EPIC-5.1: Publication Preparation
+
+**Priority:** Critical | **Impact:** Very High | **Effort:** Medium | **Risk:** Low
+**Source:** Product Roadmap v1 — Phase 5
+**Status:** Not Started
+**Dependencies:** PMR-3 (scope locked)
+**AI-first benefit:** Store-ready documentation and demo assets make the extension discoverable and usable without human onboarding.
+
+Prepare all assets for Zed Extension Store publication: comprehensive README with demos, extension icon, GIF walkthroughs of key features, and updated HINTS.md for contributor onboarding.
+
+#### Definition of Done
 
 - [ ] **T-500** — Verify extension ID `stringknife` is available in the Zed extension registry
 - [ ] **T-501** — Ensure `extension.toml` passes all Zed validation rules
@@ -1120,7 +1835,24 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
   - [ ] Smart detection in action
 - [ ] **T-505** — Update `HINTS.md` with final architecture, contributor onboarding, and "how to add a new operation" guide
 
+#### Verification
+
+- [ ] `extension.toml` passes Zed's validation (test with `cargo build` for WASM target)
+- [ ] README renders correctly on GitHub with all GIFs loading
+- [ ] Icon meets Zed store guidelines (SVG, correct dimensions)
+- [ ] HINTS.md "how to add a new operation" guide is accurate and complete
+
 ### EPIC-5.2: Publish to Zed Extension Store
+
+**Priority:** Critical | **Impact:** Very High | **Effort:** Medium | **Risk:** Medium
+**Source:** Product Roadmap v1 — Phase 5
+**Status:** Not Started
+**Dependencies:** EPIC-5.1, ARI-3, A-050, A-051
+**AI-first benefit:** Published extension validates the entire build-to-deploy pipeline end-to-end.
+
+Submit the extension to the Zed Extension Store by forking `zed-industries/extensions`, adding StringKnife as a submodule, and opening a PR. Iterate on review feedback until merged.
+
+#### Definition of Done
 
 - [ ] **T-510** — Fork `zed-industries/extensions` to personal GitHub account
 - [ ] **T-511** — Add `stringknife` as a Git submodule in `extensions/` directory
@@ -1131,7 +1863,24 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
 - [ ] **T-516** — Verify extension appears in Zed Extension Store post-merge
 - [ ] **T-517** — Test installation from the store on a clean Zed instance
 
+#### Verification
+
+- [ ] Extension appears in Zed Extension Store search results
+- [ ] Fresh install from store works on macOS and Linux
+- [ ] All code actions functional after store installation (no dev-only dependencies)
+- [ ] Binary downloads correctly for user's platform
+
 ### EPIC-5.3: Community & Maintenance
+
+**Priority:** High | **Impact:** High | **Effort:** Medium | **Risk:** Low
+**Source:** Product Roadmap v1 — Phase 5
+**Status:** Not Started
+**Dependencies:** EPIC-5.2
+**AI-first benefit:** Issue templates and contribution guidelines enable agents to triage issues and submit PRs following established patterns.
+
+Set up community infrastructure: issue templates, GitHub Discussions, automated extension updates, security disclosure policy, and initial release announcement.
+
+#### Definition of Done
 
 - [ ] **T-520** — Create GitHub issue templates
   - [ ] Bug report template
@@ -1143,7 +1892,21 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
 - [ ] **T-524** — Tag and release `v0.1.0`
 - [ ] **T-525** — Announce on Zed Discord and relevant communities
 
+#### Verification
+
+- [ ] Issue templates render correctly on GitHub (test by creating draft issues)
+- [ ] `v0.1.0` tag exists with GitHub Release and platform binaries
+- [ ] `SECURITY.md` provides clear disclosure instructions
+- [ ] Announcement posted on Zed Discord
+
 ### 🔒 GATE: ARI-3 Checkpoint (Pre-Publish)
+
+**Priority:** Critical | **Impact:** Very High | **Effort:** Small | **Risk:** Medium
+**Source:** ARI Governance — Phase 5 pre-publish gate
+**Status:** Not Started
+**Dependencies:** EPIC-5.1
+
+#### Definition of Done
 
 - [ ] **ARI-3** — Run `ariscan` — **minimum composite score ≥ 8.5**
   - [ ] Record scores in `docs/ari/ARI-3.md`
@@ -1152,7 +1915,20 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
   - [ ] Security gate: **Pass** (cargo-audit clean, fuzz tests run, no unsafe)
   - [ ] If below 8.5: **block store submission** — final hardening sprint
 
+#### Verification
+
+- [ ] `docs/ari/ARI-3.md` committed with per-pillar scores
+- [ ] Composite ARI score ≥ 8.5 confirmed
+- [ ] All pillars individually ≥ 7.5
+
 ### 🔍 AUDIT: Security Audit #2 (Pre-Publish)
+
+**Priority:** Critical | **Impact:** Very High | **Effort:** Medium | **Risk:** Low
+**Source:** Audit Schedule — Phase 5 pre-publish
+**Status:** Not Started
+**Dependencies:** EPIC-5.1
+
+#### Definition of Done
 
 - [ ] **A-050** — Pre-Publish Security Audit
   - [ ] `cargo audit` — zero advisories
@@ -1162,7 +1938,20 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
   - [ ] Review: can any code action cause data loss? (e.g., decode fails but still replaces text)
   - [ ] Document in `docs/audits/SECURITY-AUDIT-2.md`
 
+#### Verification
+
+- [ ] `docs/audits/SECURITY-AUDIT-2.md` committed with fuzz results and permission review
+- [ ] Zero data-loss scenarios identified
+- [ ] `cargo audit` and `cargo deny check` clean
+
 ### 🔍 AUDIT: UX Audit #2 (Pre-Publish)
+
+**Priority:** High | **Impact:** Very High | **Effort:** Medium | **Risk:** Low
+**Source:** Audit Schedule — Phase 5 pre-publish
+**Status:** Not Started
+**Dependencies:** EPIC-5.1
+
+#### Definition of Done
 
 - [ ] **A-051** — Pre-Publish UX Audit
   - [ ] Fresh install test on macOS, Linux
@@ -1172,13 +1961,26 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
   - [ ] Verify no performance degradation on large files (10K+ line files)
   - [ ] Document in `docs/audits/UX-AUDIT-2.md`
 
-**Phase 5 Exit Criteria:** Extension live in Zed Extension Store. Installable by any Zed user. ARI ≥ 8.5. Both security and UX audits passed. Community contribution pipeline in place.
+#### Verification
+
+- [ ] `docs/audits/UX-AUDIT-2.md` committed with install timing and platform test results
+- [ ] Time-to-first-encode < 30 seconds confirmed
+- [ ] No performance degradation on 10K+ line files
+
+**Phase 5 Exit Criteria:** Extension live in Zed Extension Store. Installable by any Zed user. ARI ≥ 8.5. Benchmark regression blocks merge (>20% regression). Test coverage ≥ 85% on `transforms/`. Both security and UX audits passed. Community contribution pipeline in place.
 
 ---
 
 ### 📋 PM REVIEW: PMR-4 — Post-Launch Retrospective
 
+**Priority:** High | **Impact:** Very High | **Effort:** Small | **Risk:** Low
+**Source:** PM Governance Cadence
+**Status:** Not Started
+**Dependencies:** EPIC-5.2 (store publication complete)
+
 > **Scheduled:** 2 weeks after Phase 5 store publication
+
+#### Definition of Done
 
 - [ ] **PMR-4** — Conduct Post-Launch Retrospective
   - [ ] Gather download/install metrics from Zed extension store
@@ -1192,6 +1994,11 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
   - [ ] Adjust Phase 6 scope and priority order based on evidence
   - [ ] Document decisions in `docs/pm-reviews/PMR-4.md`
 
+#### Verification
+
+- [ ] `docs/pm-reviews/PMR-4.md` committed with metrics, user feedback themes, and Phase 6 stack rank
+- [ ] Kill and promote decisions documented with evidence basis
+
 ---
 
 ## Phase 6 — Advanced Features (Post-Launch)
@@ -1200,6 +2007,16 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
 
 ### EPIC-6.1: Timestamp/Epoch Operations
 
+**Priority:** Medium | **Impact:** Medium | **Effort:** Small | **Risk:** Low
+**Source:** Product Roadmap v1 — Phase 6
+**Status:** Not Started
+**Dependencies:** EPIC-0.4, PMR-4 (priority confirmed by user demand)
+**AI-first benefit:** Timestamp edge cases (Y2K38, negative epochs) are well-documented — agents can generate comprehensive test suites from specs.
+
+Implement Unix timestamp ↔ ISO 8601 ↔ human-readable conversions with smart detection for epoch timestamps (10-digit seconds, 13-digit milliseconds).
+
+#### Definition of Done
+
 - [ ] **T-600** — Implement `Unix Timestamp → ISO 8601` code action
   - [ ] Pure function in `transforms/timestamp.rs`
 - [ ] **T-601** — Implement `ISO 8601 → Unix Timestamp` code action
@@ -1207,7 +2024,24 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
 - [ ] **T-603** — Detect epoch timestamps in selection (10-digit seconds, 13-digit milliseconds)
 - [ ] **T-604** — Unit tests for timestamp operations (edge cases: negative epochs, Y2K38, milliseconds)
 
+#### Verification
+
+- [ ] `cargo test -p transforms -- timestamp` passes all tests
+- [ ] Known epoch values produce correct ISO 8601 output
+- [ ] Y2K38 boundary (2147483647) handled correctly
+- [ ] 13-digit millisecond timestamps detected and converted
+
 ### EPIC-6.2: Number Base Conversions
+
+**Priority:** Medium | **Impact:** Medium | **Effort:** Small | **Risk:** Low
+**Source:** Product Roadmap v1 — Phase 6
+**Status:** Not Started
+**Dependencies:** EPIC-0.4
+**AI-first benefit:** Number base conversions are pure math — trivially testable with known input/output pairs.
+
+Implement decimal ↔ hex ↔ binary ↔ octal conversions with auto-detection of number base from prefix (`0x`, `0b`, `0o`).
+
+#### Definition of Done
 
 - [ ] **T-610** — Implement `Decimal → Hex` code action
   - [ ] Pure function in `transforms/numbers.rs`
@@ -1219,7 +2053,24 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
 - [ ] **T-616** — Auto-detect number base from prefix (`0x`, `0b`, `0o`)
 - [ ] **T-617** — Unit tests for number conversions (large numbers, negative numbers, edge cases)
 
+#### Verification
+
+- [ ] `cargo test -p transforms -- numbers` passes all tests
+- [ ] `0xFF` auto-detected as hex and converted to decimal 255
+- [ ] Large numbers (u64 range) handled without overflow
+- [ ] Negative numbers handled or rejected with clear error
+
 ### EPIC-6.3: UUID & Random Generation
+
+**Priority:** Medium | **Impact:** High | **Effort:** Small | **Risk:** Low
+**Source:** Product Roadmap v1 — Phase 6
+**Status:** Not Started
+**Dependencies:** EPIC-0.4
+**AI-first benefit:** UUID generation and validation are self-contained — agents can implement and test without cross-module dependencies.
+
+Implement UUID v4 (random) and v7 (time-sortable) generation, UUID validation, and configurable random string generation.
+
+#### Definition of Done
 
 - [ ] **T-620** — Implement `Generate UUID v4` code action (inserts at cursor/replaces selection)
   - [ ] Pure function in `transforms/uuid.rs`
@@ -1228,7 +2079,24 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
 - [ ] **T-623** — Implement `Generate Random String` code action (configurable length, charset via config)
 - [ ] **T-624** — Unit tests for UUID operations
 
+#### Verification
+
+- [ ] `cargo test -p transforms -- uuid` passes all tests
+- [ ] Generated UUIDs pass RFC 4122 validation
+- [ ] UUID v7 timestamps are monotonically increasing
+- [ ] Validate UUID correctly identifies version for v1, v4, v7
+
 ### EPIC-6.4: Regex & Pattern Operations
+
+**Priority:** Medium | **Impact:** High | **Effort:** Medium | **Risk:** Low
+**Source:** Product Roadmap v1 — Phase 6
+**Status:** Not Started
+**Dependencies:** EPIC-0.4
+**AI-first benefit:** Pattern extraction uses well-defined regex specs — agents can extend with new patterns by following the existing extraction template.
+
+Implement pattern extraction (emails, URLs, IP addresses) and sensitive data masking from selected text. Useful for log analysis, data sanitisation, and security reviews.
+
+#### Definition of Done
 
 - [ ] **T-630** — Implement `Extract Emails` code action (finds all email addresses in selection)
   - [ ] Pure function in `transforms/extract.rs`
@@ -1237,14 +2105,48 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
 - [ ] **T-633** — Implement `Mask Sensitive Data` code action (replace middle chars with `*` for emails, tokens)
 - [ ] **T-634** — Unit tests for extraction operations
 
+#### Verification
+
+- [ ] `cargo test -p transforms -- extract` passes all tests
+- [ ] Email extraction handles edge cases (subdomains, plus addressing)
+- [ ] IPv6 addresses extracted correctly (full and abbreviated forms)
+- [ ] Masking preserves first/last characters with `*` fill
+
 ### EPIC-6.5: Text Diff & Comparison
+
+**Priority:** Low | **Impact:** Medium | **Effort:** Small | **Risk:** Low
+**Source:** Product Roadmap v1 — Phase 6
+**Status:** Not Started
+**Dependencies:** EPIC-0.4
+**AI-first benefit:** Diff output is structured — agents can validate correctness against known diff algorithms.
+
+Implement line-level and character-level text diffing for selections containing two text blocks separated by a delimiter.
+
+#### Definition of Done
 
 - [ ] **T-640** — Implement `String Diff (Line)` code action (when two blocks separated by `---` or similar delimiter, show line diff)
   - [ ] Pure function in `transforms/diff.rs`
 - [ ] **T-641** — Implement `String Diff (Character)` code action (char-level diff for short strings)
 - [ ] **T-642** — Unit tests for diff operations
 
+#### Verification
+
+- [ ] `cargo test -p transforms -- diff` passes all tests
+- [ ] Line diff correctly identifies additions, deletions, and unchanged lines
+- [ ] Character diff highlights individual character changes
+- [ ] Missing delimiter returns clear error
+
 ### EPIC-6.6: Compression
+
+**Priority:** Low | **Impact:** Medium | **Effort:** Small | **Risk:** Low
+**Source:** Product Roadmap v1 — Phase 6
+**Status:** Not Started
+**Dependencies:** EPIC-0.4, EPIC-1.1 (Base64 for output encoding)
+**AI-first benefit:** Compression transforms compose with Base64 — tests validate the composition pipeline.
+
+Implement gzip and deflate compression/decompression with Base64 encoding for text-safe transport. Useful for developers working with compressed API payloads and data URIs.
+
+#### Definition of Done
 
 - [ ] **T-650** — Implement `Gzip Compress → Base64` code action
   - [ ] Pure function in `transforms/compress.rs`
@@ -1253,7 +2155,21 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
 - [ ] **T-653** — Implement `Base64 → Deflate Decompress` code action
 - [ ] **T-654** — Unit tests for compression operations
 
+#### Verification
+
+- [ ] `cargo test -p transforms -- compress` passes all tests
+- [ ] Gzip roundtrip: `decompress(compress(x)) == x`
+- [ ] Deflate roundtrip: `decompress(compress(x)) == x`
+- [ ] Invalid compressed data returns structured error
+
 ### 🔒 GATE: ARI-4 Checkpoint (v1.0 Gate)
+
+**Priority:** Critical | **Impact:** Very High | **Effort:** Small | **Risk:** Medium
+**Source:** ARI Governance — Phase 6 v1.0 gate
+**Status:** Not Started
+**Dependencies:** EPIC-6.1, EPIC-6.2, EPIC-6.3, EPIC-6.4, EPIC-6.5, EPIC-6.6
+
+#### Definition of Done
 
 - [ ] **ARI-4** — Run `ariscan` — **minimum composite score ≥ 9.0**
   - [ ] Record scores in `docs/ari/ARI-4.md`
@@ -1263,7 +2179,21 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
   - [ ] Full ARI trajectory report: ARI-BASELINE → ARI-0 → ARI-1 → ARI-2 → ARI-3 → ARI-4
   - [ ] If below 9.0: continue as 0.x — do not stamp v1.0
 
+#### Verification
+
+- [ ] `docs/ari/ARI-4.md` committed with full trajectory report
+- [ ] Composite ARI score ≥ 9.0 confirmed
+- [ ] All pillars individually ≥ 8.0
+- [ ] ARI trajectory shows consistent upward trend
+
 ### 🔍 AUDIT: Full Audit Suite (Pre v1.0)
+
+**Priority:** High | **Impact:** Very High | **Effort:** High | **Risk:** Low
+**Source:** Audit Schedule — Phase 6 pre-v1.0
+**Status:** Not Started
+**Dependencies:** EPIC-6.1, EPIC-6.2, EPIC-6.3, EPIC-6.4, EPIC-6.5, EPIC-6.6
+
+#### Definition of Done
 
 - [ ] **A-060** — Code Quality Audit #3
   - [ ] Test coverage ≥ 90% on `transforms/`
@@ -1292,7 +2222,21 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
   - [ ] Performance audit with real-world file sizes
   - [ ] Document in `docs/audits/UX-AUDIT-3.md`
 
+#### Verification
+
+- [ ] All five audit reports committed to `docs/audits/`
+- [ ] Test coverage ≥ 90% confirmed
+- [ ] Zero security advisories, zero clippy warnings, zero dead code
+- [ ] Cross-platform walkthrough completed on macOS, Linux, Windows
+
 ### 📋 PM REVIEW: PMR-5 — v1.0 Readiness Review
+
+**Priority:** Critical | **Impact:** Very High | **Effort:** Small | **Risk:** Low
+**Source:** PM Governance Cadence
+**Status:** Not Started
+**Dependencies:** ARI-4, A-060, A-061, A-062, A-063, A-064
+
+#### Definition of Done
 
 - [ ] **PMR-5** — Conduct v1.0 Readiness Review
   - [ ] Is the extension stable enough for a v1.0 commitment?
@@ -1304,7 +2248,13 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
   - [ ] If v1.0: define semantic versioning policy going forward (breaking changes = major bump)
   - [ ] Document decisions in `docs/pm-reviews/PMR-5.md`
 
-**Phase 6 Exit Criteria:** Advanced features driven by community demand. ARI ≥ 9.0. Full audit suite passed. v1.0 decision made.
+#### Verification
+
+- [ ] `docs/pm-reviews/PMR-5.md` committed with v1.0 ship/no-ship decision and evidence
+- [ ] Semver policy documented if shipping v1.0
+- [ ] All blocking audit findings resolved
+
+**Phase 6 Exit Criteria:** Advanced features driven by community demand. ARI ≥ 9.0. All CI gates at maximum strictness. Test coverage ≥ 85% on `transforms/`. Full audit suite passed. v1.0 decision made.
 
 ---
 
@@ -1313,20 +2263,79 @@ These are woven into the phase structure below with `A-` prefix ticket numbers.
 > Ideas captured but not yet prioritised. Community upvotes and PMR-4 evidence drive promotion into a Phase.
 
 - [ ] **B-001** — `ROT13` encode/decode (the gentleman's encryption)
+  - **Priority:** Low | **Impact:** Low | **Effort:** Small | **Risk:** Low
+  - **Status:** Not Started
+  - **Dependencies:** Phase 6 complete or PMR-4 promotion
+
 - [ ] **B-002** — `Morse Code` encode/decode
+  - **Priority:** Low | **Impact:** Low | **Effort:** Small | **Risk:** Low
+  - **Status:** Not Started
+  - **Dependencies:** Phase 6 complete or PMR-4 promotion
+
 - [ ] **B-003** — `NATO Phonetic Alphabet` conversion
+  - **Priority:** Low | **Impact:** Low | **Effort:** Small | **Risk:** Low
+  - **Status:** Not Started
+  - **Dependencies:** Phase 6 complete or PMR-4 promotion
+
 - [ ] **B-004** — `Lorem Ipsum` generator (replace selection with N paragraphs)
+  - **Priority:** Low | **Impact:** Low | **Effort:** Small | **Risk:** Low
+  - **Status:** Not Started
+  - **Dependencies:** Phase 6 complete or PMR-4 promotion
+
 - [ ] **B-005** — `Markdown → HTML` conversion
+  - **Priority:** Low | **Impact:** Medium | **Effort:** Medium | **Risk:** Low
+  - **Status:** Not Started
+  - **Dependencies:** Phase 6 complete or PMR-4 promotion
+
 - [ ] **B-006** — `HTML → Markdown` conversion
+  - **Priority:** Low | **Impact:** Medium | **Effort:** Medium | **Risk:** Low
+  - **Status:** Not Started
+  - **Dependencies:** Phase 6 complete or PMR-4 promotion
+
 - [ ] **B-007** — `CSV ↔ TSV` conversion
+  - **Priority:** Low | **Impact:** Low | **Effort:** Small | **Risk:** Low
+  - **Status:** Not Started
+  - **Dependencies:** Phase 6 complete or PMR-4 promotion
+
 - [ ] **B-008** — `JSON Schema` generation from JSON sample
+  - **Priority:** Low | **Impact:** Medium | **Effort:** Medium | **Risk:** Low
+  - **Status:** Not Started
+  - **Dependencies:** Phase 6 complete or PMR-4 promotion
+
 - [ ] **B-009** — `HMAC-SHA256` computation (requires key input — UX challenge)
+  - **Priority:** Low | **Impact:** Medium | **Effort:** High | **Risk:** Medium
+  - **Status:** Not Started
+  - **Dependencies:** Phase 6 complete or PMR-4 promotion
+
 - [ ] **B-010** — `QR Code` generation (output as Unicode block art)
+  - **Priority:** Low | **Impact:** Low | **Effort:** Medium | **Risk:** Low
+  - **Status:** Not Started
+  - **Dependencies:** Phase 6 complete or PMR-4 promotion
+
 - [ ] **B-011** — `Color Code` conversions (hex ↔ rgb ↔ hsl)
+  - **Priority:** Low | **Impact:** Medium | **Effort:** Small | **Risk:** Low
+  - **Status:** Not Started
+  - **Dependencies:** Phase 6 complete or PMR-4 promotion
+
 - [ ] **B-012** — `Slug` generation (URL-safe slugs from titles)
+  - **Priority:** Low | **Impact:** Low | **Effort:** Small | **Risk:** Low
+  - **Status:** Not Started
+  - **Dependencies:** Phase 6 complete or PMR-4 promotion
+
 - [ ] **B-013** — `Emmet Abbreviation` expansion
+  - **Priority:** Low | **Impact:** Medium | **Effort:** High | **Risk:** Medium
+  - **Status:** Not Started
+  - **Dependencies:** Phase 6 complete or PMR-4 promotion
+
 - [ ] **B-014** — `SQL Formatter` (pretty print SQL)
+  - **Priority:** Low | **Impact:** Medium | **Effort:** Medium | **Risk:** Low
+  - **Status:** Not Started
+  - **Dependencies:** Phase 6 complete or PMR-4 promotion
+
 - [ ] **B-015** — Custom user-defined transformations via config (pipe through shell command)
+  - **Priority:** Low | **Impact:** High | **Effort:** High | **Risk:** High
+  - **Status:** Not Started
+  - **Dependencies:** Phase 6 complete or PMR-4 promotion
 
 ---
 
