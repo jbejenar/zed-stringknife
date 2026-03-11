@@ -59,7 +59,7 @@ jobs:
           Get-FileHash stringknife-lsp-${{ matrix.target }}.zip -Algorithm SHA256 | Format-List Hash | Out-File stringknife-lsp-${{ matrix.target }}.zip.sha256
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: stringknife-lsp-${{ matrix.target }}
           path: stringknife-lsp-*
