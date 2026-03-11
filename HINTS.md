@@ -22,7 +22,7 @@ See `CLAUDE.md` for the full architecture summary.
 
 These look wrong but are deliberate — do not "fix" them:
 
-- (none yet — add entries here as they arise, with justification)
+- `transforms/hash.rs` — `#![allow(clippy::many_single_char_names, clippy::unreadable_literal, clippy::needless_range_loop)]`: Hash algorithms (MD5, SHA-1, SHA-256, SHA-512) use single-char working variables (a-h), RFC-specified hex constants, and indexed array mutation that matches the reference specifications from FIPS 180-4 and RFC 1321.
 
 ## Dependency Policy
 

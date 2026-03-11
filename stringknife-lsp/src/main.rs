@@ -13,7 +13,11 @@ use tower_lsp::lsp_types::{
 };
 use tower_lsp::{Client, LanguageServer, LspService, Server};
 
-use stringknife_core::transforms::{base64, hex, html, misc, unicode, url};
+use stringknife_core::detect::{detect_encodings, DetectedEncoding};
+use stringknife_core::transforms::{
+    base64, case, csv, escape, hash, hex, html, inspect, json, jwt, misc, unicode, url, whitespace,
+    xml,
+};
 
 /// Document store: maps document URIs to their full text content.
 struct DocumentStore {
@@ -101,7 +105,7 @@ impl LanguageServer for Backend {
         let uri = &params.text_document.uri;
         let range = params.range;
 
-        // No action if no text is selected (collapsed range).
+        // T-154: No action if no text is selected (collapsed range).
         if range.start == range.end {
             return Ok(Some(Vec::new()));
         }
@@ -110,79 +114,274 @@ impl LanguageServer for Backend {
             return Ok(Some(Vec::new()));
         };
 
+        // T-153: extract_range handles multi-line selections correctly.
         let Some(selected) = extract_range(&text, range) else {
             return Ok(Some(Vec::new()));
         };
 
-        let mut actions = Vec::new();
+        Ok(Some(build_actions(uri, range, &selected)))
+    }
+}
 
-        // Helper: try a transform and add a code action if it produces a different result.
-        let mut try_action =
-            |title: &str,
-             result: std::result::Result<String, stringknife_core::StringKnifeError>| {
-                if let Ok(transformed) = result {
-                    if transformed != selected {
-                        actions.push(build_code_action(title, uri.clone(), range, &transformed));
+/// Build the full list of code actions for a given selection.
+///
+/// T-151: Detected decode actions appear first; encode/hash actions always appear.
+/// T-152: Actions are ordered by relevance (detected decodes, then encodes, then hashes).
+#[allow(clippy::too_many_lines)] // flat action registration list, splitting adds no clarity
+fn build_actions(uri: &Url, range: Range, selected: &str) -> Vec<CodeActionOrCommand> {
+    let detected = detect_encodings(selected);
+
+    let mut detected_actions = Vec::new();
+    let mut encode_actions = Vec::new();
+
+    let mut try_decode =
+        |title: &str,
+         encoding: DetectedEncoding,
+         result: std::result::Result<String, stringknife_core::StringKnifeError>| {
+            if let Ok(ref transformed) = result {
+                if *transformed != *selected {
+                    let action = build_code_action(title, uri.clone(), range, transformed);
+                    if detected.contains(&encoding) {
+                        detected_actions.push(action);
                     }
                 }
-            };
+            }
+        };
 
-        // Misc
-        try_action(
-            "StringKnife: Reverse String",
-            misc::reverse_string(&selected),
-        );
+    let mut try_encode =
+        |title: &str, result: std::result::Result<String, stringknife_core::StringKnifeError>| {
+            if let Ok(ref transformed) = result {
+                if *transformed != *selected {
+                    encode_actions.push(build_code_action(title, uri.clone(), range, transformed));
+                }
+            }
+        };
 
-        // Base64
-        try_action(
-            "StringKnife: Base64 Encode",
-            base64::base64_encode(&selected),
-        );
-        try_action(
-            "StringKnife: Base64 Decode",
-            base64::base64_decode(&selected),
-        );
-        try_action(
-            "StringKnife: Base64URL Encode",
-            base64::base64url_encode(&selected),
-        );
-        try_action(
-            "StringKnife: Base64URL Decode",
-            base64::base64url_decode(&selected),
-        );
+    // --- Decode actions (only shown if detected) ---
+    try_decode(
+        "StringKnife: Base64 Decode",
+        DetectedEncoding::Base64,
+        base64::base64_decode(selected),
+    );
+    try_decode(
+        "StringKnife: Base64URL Decode",
+        DetectedEncoding::Base64,
+        base64::base64url_decode(selected),
+    );
+    try_decode(
+        "StringKnife: URL Decode",
+        DetectedEncoding::UrlEncoded,
+        url::url_decode(selected),
+    );
+    try_decode(
+        "StringKnife: HTML Decode",
+        DetectedEncoding::HtmlEntity,
+        html::html_decode(selected),
+    );
+    try_decode(
+        "StringKnife: Hex Decode",
+        DetectedEncoding::Hex,
+        hex::hex_decode(selected),
+    );
+    try_decode(
+        "StringKnife: Unicode Unescape",
+        DetectedEncoding::UnicodeEscape,
+        unicode::unicode_unescape(selected),
+    );
 
-        // URL encoding
-        try_action("StringKnife: URL Encode", url::url_encode(&selected));
-        try_action("StringKnife: URL Decode", url::url_decode(&selected));
-        try_action(
-            "StringKnife: URL Encode (Component)",
-            url::url_encode_component(&selected),
-        );
+    // JWT decode (shown if JWT detected)
+    try_decode(
+        "StringKnife: JWT Decode Header",
+        DetectedEncoding::Jwt,
+        jwt::jwt_decode_header(selected),
+    );
+    try_decode(
+        "StringKnife: JWT Decode Payload",
+        DetectedEncoding::Jwt,
+        jwt::jwt_decode_payload(selected),
+    );
+    try_decode(
+        "StringKnife: JWT Decode (Full)",
+        DetectedEncoding::Jwt,
+        jwt::jwt_decode_full(selected),
+    );
 
-        // HTML entities
-        try_action("StringKnife: HTML Encode", html::html_encode(&selected));
-        try_action("StringKnife: HTML Decode", html::html_decode(&selected));
+    // --- Encode actions (always shown) ---
+    try_encode(
+        "StringKnife: Base64 Encode",
+        base64::base64_encode(selected),
+    );
+    try_encode(
+        "StringKnife: Base64URL Encode",
+        base64::base64url_encode(selected),
+    );
+    try_encode("StringKnife: URL Encode", url::url_encode(selected));
+    try_encode(
+        "StringKnife: URL Encode (Component)",
+        url::url_encode_component(selected),
+    );
+    try_encode("StringKnife: HTML Encode", html::html_encode(selected));
+    try_encode("StringKnife: Hex Encode", hex::hex_encode(selected));
+    try_encode(
+        "StringKnife: Unicode Escape",
+        unicode::unicode_escape(selected),
+    );
+    try_encode(
+        "StringKnife: Show Unicode Codepoints",
+        unicode::show_codepoints(selected),
+    );
+    try_encode(
+        "StringKnife: Reverse String",
+        misc::reverse_string(selected),
+    );
 
-        // Hex
-        try_action("StringKnife: Hex Encode", hex::hex_encode(&selected));
-        try_action("StringKnife: Hex Decode", hex::hex_decode(&selected));
+    // --- Case conversion actions (always shown) ---
+    try_encode("StringKnife: To UPPERCASE", case::to_upper(selected));
+    try_encode("StringKnife: To lowercase", case::to_lower(selected));
+    try_encode("StringKnife: To Title Case", case::to_title_case(selected));
+    try_encode(
+        "StringKnife: To Sentence Case",
+        case::to_sentence_case(selected),
+    );
+    try_encode("StringKnife: To camelCase", case::to_camel_case(selected));
+    try_encode("StringKnife: To PascalCase", case::to_pascal_case(selected));
+    try_encode("StringKnife: To snake_case", case::to_snake_case(selected));
+    try_encode(
+        "StringKnife: To SCREAMING_SNAKE_CASE",
+        case::to_screaming_snake_case(selected),
+    );
+    try_encode("StringKnife: To kebab-case", case::to_kebab_case(selected));
+    try_encode("StringKnife: To dot.case", case::to_dot_case(selected));
+    try_encode("StringKnife: To path/case", case::to_path_case(selected));
+    try_encode(
+        "StringKnife: To CONSTANT_CASE",
+        case::to_constant_case(selected),
+    );
+    try_encode("StringKnife: Toggle Case", case::toggle_case(selected));
 
-        // Unicode
-        try_action(
-            "StringKnife: Unicode Escape",
-            unicode::unicode_escape(&selected),
-        );
-        try_action(
-            "StringKnife: Unicode Unescape",
-            unicode::unicode_unescape(&selected),
-        );
-        try_action(
-            "StringKnife: Show Unicode Codepoints",
-            unicode::show_codepoints(&selected),
-        );
+    // --- JSON actions (always shown) ---
+    try_encode(
+        "StringKnife: JSON Pretty Print",
+        json::json_pretty_print(selected),
+    );
+    try_encode("StringKnife: JSON Minify", json::json_minify(selected));
+    try_encode(
+        "StringKnife: JSON Escape String",
+        json::json_escape(selected),
+    );
+    try_encode(
+        "StringKnife: JSON Unescape String",
+        json::json_unescape(selected),
+    );
 
-        Ok(Some(actions))
-    }
+    // --- XML actions (always shown) ---
+    try_encode(
+        "StringKnife: XML Pretty Print",
+        xml::xml_pretty_print(selected),
+    );
+    try_encode("StringKnife: XML Minify", xml::xml_minify(selected));
+
+    // --- CSV actions (always shown) ---
+    try_encode("StringKnife: CSV → JSON Array", csv::csv_to_json(selected));
+
+    // --- Whitespace & line actions (always shown) ---
+    try_encode(
+        "StringKnife: Trim Whitespace",
+        whitespace::trim_whitespace(selected),
+    );
+    try_encode(
+        "StringKnife: Trim Leading",
+        whitespace::trim_leading(selected),
+    );
+    try_encode(
+        "StringKnife: Trim Trailing",
+        whitespace::trim_trailing(selected),
+    );
+    try_encode(
+        "StringKnife: Collapse Whitespace",
+        whitespace::collapse_whitespace(selected),
+    );
+    try_encode(
+        "StringKnife: Remove Blank Lines",
+        whitespace::remove_blank_lines(selected),
+    );
+    try_encode(
+        "StringKnife: Remove Duplicate Lines",
+        whitespace::remove_duplicate_lines(selected),
+    );
+    try_encode(
+        "StringKnife: Sort Lines (A→Z)",
+        whitespace::sort_lines_asc(selected),
+    );
+    try_encode(
+        "StringKnife: Sort Lines (Z→A)",
+        whitespace::sort_lines_desc(selected),
+    );
+    try_encode(
+        "StringKnife: Sort Lines (by length)",
+        whitespace::sort_lines_by_length(selected),
+    );
+    try_encode(
+        "StringKnife: Reverse Lines",
+        whitespace::reverse_lines(selected),
+    );
+    try_encode(
+        "StringKnife: Shuffle Lines",
+        whitespace::shuffle_lines(selected),
+    );
+    try_encode(
+        "StringKnife: Number Lines",
+        whitespace::number_lines(selected),
+    );
+
+    // --- Hash actions (one-way, always shown) ---
+    try_encode("StringKnife: MD5 Hash", hash::md5(selected));
+    try_encode("StringKnife: SHA-1 Hash", hash::sha1(selected));
+    try_encode("StringKnife: SHA-256 Hash", hash::sha256(selected));
+    try_encode("StringKnife: SHA-512 Hash", hash::sha512(selected));
+    try_encode("StringKnife: CRC32 Checksum", hash::crc32(selected));
+
+    // --- Escape actions (always shown) ---
+    try_encode(
+        "StringKnife: Escape Backslashes",
+        escape::escape_backslashes(selected),
+    );
+    try_encode(
+        "StringKnife: Unescape Backslashes",
+        escape::unescape_backslashes(selected),
+    );
+    try_encode("StringKnife: Escape Regex", escape::escape_regex(selected));
+    try_encode(
+        "StringKnife: Escape SQL String",
+        escape::escape_sql(selected),
+    );
+    try_encode(
+        "StringKnife: Escape Shell String",
+        escape::escape_shell(selected),
+    );
+    try_encode(
+        "StringKnife: Escape CSV Field",
+        escape::escape_csv(selected),
+    );
+
+    // --- Inspection actions (always shown) ---
+    try_encode(
+        "StringKnife: Count Characters",
+        inspect::count_chars(selected),
+    );
+    try_encode(
+        "StringKnife: String Length (bytes)",
+        inspect::byte_length(selected),
+    );
+    try_encode(
+        "StringKnife: Detect Encoding",
+        inspect::detect_encoding(selected),
+    );
+
+    // T-152: Detected decodes first, then all encode/misc/hash actions.
+    let mut actions = detected_actions;
+    actions.extend(encode_actions);
+    actions
 }
 
 /// Extract the text within a given LSP range from the full document text.

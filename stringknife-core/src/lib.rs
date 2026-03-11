@@ -8,6 +8,7 @@
 #![deny(unsafe_code)]
 #![warn(missing_docs)]
 
+pub mod detect;
 pub mod error;
 pub mod transforms;
 

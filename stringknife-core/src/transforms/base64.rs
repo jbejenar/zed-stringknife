@@ -2,7 +2,10 @@
 //!
 //! Supports both standard (RFC 4648) and URL-safe alphabets.
 
+use super::common::check_size;
 use crate::error::StringKnifeError;
+
+#[cfg(test)]
 use crate::MAX_INPUT_BYTES;
 
 const STANDARD_ALPHABET: &[u8; 64] =
@@ -67,16 +70,6 @@ pub fn base64url_decode(input: &str) -> Result<String, StringKnifeError> {
         operation: "base64url_decode".to_string(),
         reason: "decoded bytes are not valid UTF-8".to_string(),
     })
-}
-
-fn check_size(input: &str) -> Result<(), StringKnifeError> {
-    if input.len() > MAX_INPUT_BYTES {
-        return Err(StringKnifeError::InputTooLarge {
-            max_bytes: MAX_INPUT_BYTES,
-            actual_bytes: input.len(),
-        });
-    }
-    Ok(())
 }
 
 fn encode_bytes(bytes: &[u8], alphabet: &[u8; 64], pad: bool) -> String {

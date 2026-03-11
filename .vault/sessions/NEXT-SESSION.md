@@ -1,8 +1,8 @@
 ---
 type: session-handoff
-current_phase: 1
+current_phase: 3
 current_ticket: null
-blocked_by: [T-018, T-019, T-020, T-667, ARI-0, PMR-0]
+blocked_by: [T-018, T-019, T-020, T-667, ARI-0, PMR-0, PMR-1, ARI-1, T-224, T-225, T-240, T-241, ARI-2, A-031, PMR-2, PMR-3]
 tags: [session]
 ---
 
@@ -10,48 +10,47 @@ tags: [session]
 
 ## Current State
 
-Phase 0 is **code-complete** (all automated tickets done). ARI-BASELINE at **59/100 (L3 Capable)**.
-Phase 1 EPIC-1.1 through EPIC-1.5 are **done** — 6 transform modules with 106 tests total.
-Remaining: EPIC-1.6 (code action UX), PMR-1, ARI-1 gate.
+Phase 3 **code-complete**. EPIC-3.1 (case), EPIC-3.2 (whitespace), EPIC-3.3 (inspect), EPIC-3.4 (escape) all done.
+Phase 2 **code-complete** with audits done (A-020, A-021, A-022).
+A-030 (Code Quality Audit #2) done.
 
-## What Last Agent Did (Session 2)
+**Total tests: 326** (321 core + 5 LSP). **64 code actions.** Zero clippy warnings. Fmt clean.
+**65 public transform functions** across 15 modules. Zero dependencies in stringknife-core.
 
-- Completed Dependency Audit #1 (A-001): 79 crates, 0 CVEs, all MIT-compatible
-- Implemented Base64 encode/decode (standard + URL-safe) — 20 tests
-- Implemented URL percent-encoding/decoding (RFC 3986) — 19 tests
-- Implemented HTML entity encode/decode — 16 tests
-- Implemented Hex encode/decode — 16 tests
-- All transforms wired into LSP code_action handler
-- Updated Transform Registry, roadmap, session state
-- Zero external deps added to stringknife-core (all transforms hand-implemented)
+## What Last Agent Did (Session 4)
+
+1. **EPIC-2.3** — JSON operations (json.rs, 24 tests, 4 functions)
+2. **EPIC-2.4** — XML operations (xml.rs, 22 tests, 2 functions)
+3. **EPIC-2.5** — CSV → JSON Array (csv.rs, 11 tests, 1 function)
+4. **A-020, A-021, A-022** — Phase 2 audits (architecture, security, dependency)
+5. **EPIC-3.1** — 13 case conversions (case.rs, 35 tests)
+6. **EPIC-3.2** — 12 whitespace/line operations (whitespace.rs, 20 tests)
+7. **EPIC-3.3** — 3 inspection functions (inspect.rs, 8 tests)
+8. **EPIC-3.4** — 6 escape/unescape functions (escape.rs, 17 tests)
+9. **A-030** — Code Quality Audit #2
 
 ## What Next Agent Should Do
 
-### Immediate (automated):
-1. **EPIC-1.5** — Unicode escape/unescape operations (`transforms/unicode.rs`)
-2. **EPIC-1.6** — Code action categorisation & smart detection (T-150..T-154)
-3. Commit, create PR, ensure CI passes
+### Automated (continue Phase 3+):
+1. Phase 3 gate items that can be automated are done
+2. Review remaining Phase 3 audits (A-031 UX Audit — needs manual Zed testing)
+3. Move to **Phase 4** if Phase 3 gate passes
 
-### Human actions still needed (Phase 0 gate):
-1. **T-018/T-019/T-020:** Install dev extension in Zed, verify code actions work
-2. **T-667:** Open .vault/ in Obsidian, verify graph connectivity
-3. **ARI-0 gate:** Run ariscan, target >= 70/100
-4. **PMR-0:** Foundation review
-
-### After Phase 1 transforms complete:
-1. **PMR-1** — MVP scope review
-2. **ARI-1 gate** — target >= 75/100
-
-## Files to Read First
-
-1. `CLAUDE.md` — Architecture summary
-2. `HINTS.md` — Conventions and overrides
-3. `.vault/patterns/Adding a New Transform.md` — Transform implementation pattern
-4. `roadmap/roadmap.md` — EPIC-1.5 and EPIC-1.6 details
+### Human actions needed:
+1. **PMR-2** — Feature Velocity Check (Phase 2 PM review)
+2. **PMR-3** — Phase 3 PM review
+3. **ARI-1, ARI-2** — Run ariscan, target >= 75/80
+4. **A-031** — UX Audit (manual Zed testing)
+5. **T-018/T-019/T-020** — Install dev extension in Zed, verify code actions work
+6. **T-224/T-225** — JSON↔YAML (needs YAML parser dep decision)
+7. **T-240/T-241** — TOML↔JSON (needs TOML parser dep decision)
+8. Phase 1 gate items still pending (PMR-0, ARI-0, T-667)
 
 ## Environment Notes
 
 - Rust 1.94.0 — Homebrew cargo + rustup toolchain
-- WASM builds: `RUSTUP_TOOLCHAIN=stable-aarch64-apple-darwin RUSTC=$(rustup which rustc) cargo check --target wasm32-wasip1`
 - Quick commands: `make test`, `make lint`, `make fmt`, `make doctor`
-- Total tests: 81 (core) + 5 (LSP) = 86
+- Total tests: 321 (core) + 5 (LSP) = 326
+- Code actions: 64 total
+- Public functions: 65 across 15 transform modules
+- Dependencies: 0 in stringknife-core, ~79 transitive in stringknife-lsp

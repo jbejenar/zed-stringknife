@@ -6,8 +6,18 @@
 //! No I/O, no side effects, no LSP dependencies.
 
 pub mod base64;
+pub mod case;
+pub(crate) mod common;
+pub mod csv;
+pub mod escape;
+pub mod hash;
 pub mod hex;
 pub mod html;
+pub mod inspect;
+pub mod json;
+pub mod jwt;
 pub mod misc;
 pub mod unicode;
 pub mod url;
+pub mod whitespace;
+pub mod xml;

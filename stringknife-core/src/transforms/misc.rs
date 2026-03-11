@@ -1,6 +1,9 @@
 //! Miscellaneous string transforms.
 
+use super::common::check_size;
 use crate::error::StringKnifeError;
+
+#[cfg(test)]
 use crate::MAX_INPUT_BYTES;
 
 /// Reverses the characters in the input string.
@@ -11,12 +14,7 @@ use crate::MAX_INPUT_BYTES;
 ///
 /// Returns [`StringKnifeError::InputTooLarge`] if input exceeds [`MAX_INPUT_BYTES`].
 pub fn reverse_string(input: &str) -> Result<String, StringKnifeError> {
-    if input.len() > MAX_INPUT_BYTES {
-        return Err(StringKnifeError::InputTooLarge {
-            max_bytes: MAX_INPUT_BYTES,
-            actual_bytes: input.len(),
-        });
-    }
+    check_size(input)?;
     Ok(input.chars().rev().collect())
 }
 
