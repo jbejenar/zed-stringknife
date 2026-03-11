@@ -841,9 +841,9 @@ Lay the agent-readiness infrastructure: HINTS.md for LCI-compatible context, str
   - [x] Duplicate crate detection enabled
 - [x] **T-032** — Add `cargo-audit` to CI pipeline (Security gate)
 - [x] **T-033** — Add rustdoc comments on all public types and functions (Documentation Density)
-- [ ] **T-034** — Install and run `ariscan` against the repo — establish **ARI-BASELINE** score *(requires ariscan tool — human task)*
-  - [ ] Record baseline scores per pillar in `docs/ari/ARI-BASELINE.md`
-  - [ ] Identify any pillar below 6.0 and create remediation tickets
+- [x] **T-034** — Install and run `ariscan` against the repo — establish **ARI-BASELINE** score
+  - [x] Record baseline scores per pillar in `.vault/ari/ARI-BASELINE.md`
+  - [x] Identify pillars below target and create remediation items (P2=19, P5=25, P6=50)
 
 #### Verification
 
@@ -2488,6 +2488,21 @@ Implement gzip and deflate compression/decompression with Base64 encoding for te
   - **Priority:** Low | **Impact:** High | **Effort:** High | **Risk:** High
   - **Status:** Not Started
   - **Dependencies:** Phase 6 complete or PMR-4 promotion
+
+- [ ] **B-016** — ARI P2 Remediation: Add `package.json` with proxy scripts for ariscan detection
+  - **Priority:** Low | **Impact:** Medium | **Effort:** Small | **Risk:** Low
+  - **Status:** Not Started
+  - **Notes:** ariscan v0.1.0 has Node.js bias — looks for `package.json` scripts for test/lint detection. Makefile with `make test`/`make lint` targets exists but is not detected. Adding a thin `package.json` with `"test": "make test"` etc. would boost P2 score. Alternatively, wait for ariscan to support Makefile/Cargo detection natively.
+
+- [ ] **B-017** — ARI P5 Remediation: Add machine-readable error taxonomy documentation
+  - **Priority:** Low | **Impact:** Medium | **Effort:** Small | **Risk:** Low
+  - **Status:** Not Started
+  - **Notes:** ariscan P5 (Doc Machine-Readability) scored 25/100. It looks for API specs (OpenAPI/GraphQL), formal error taxonomy docs, and runbooks. `StringKnifeError` enum serves as the error taxonomy in code but is not surfaced as a standalone doc. Consider generating an error catalog from rustdoc or adding an `errors.md`.
+
+- [ ] **B-018** — ARI P6 Remediation: Investigate ariscan Rust-specific build determinism detection
+  - **Priority:** Low | **Impact:** Medium | **Effort:** Small | **Risk:** Low
+  - **Status:** Not Started
+  - **Notes:** ariscan P6 (Build Determinism & Type Safety) scored 50/100. It checks for `tsconfig.json strict` mode (not applicable to Rust). Rust's type system + Clippy pedantic lints provide equivalent safety. This may need an ariscan enhancement for Rust ecosystem detection.
 
 ---
 
