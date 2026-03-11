@@ -1611,7 +1611,7 @@ Implement the full suite of case conversions (13 variants) that developers use w
 
 **Priority:** High | **Impact:** High | **Effort:** Medium | **Risk:** Low
 **Source:** Product Roadmap v1 — Phase 3
-**Status:** Not Started
+**Status:** Done
 **Dependencies:** EPIC-0.4
 **AI-first benefit:** Line operations are pure text transforms with no encoding complexity — agents can implement and test each independently.
 
@@ -1619,27 +1619,27 @@ Implement whitespace manipulation and line-level operations: trim, collapse, sor
 
 #### Definition of Done
 
-- [ ] **T-320** — Implement `Trim Whitespace` code action (leading + trailing)
-  - [ ] Pure function in `transforms/whitespace.rs`
-- [ ] **T-321** — Implement `Trim Leading Whitespace` code action
-- [ ] **T-322** — Implement `Trim Trailing Whitespace` code action
-- [ ] **T-323** — Implement `Collapse Whitespace` code action (multiple spaces/tabs → single space)
-- [ ] **T-324** — Implement `Remove Blank Lines` code action
-- [ ] **T-325** — Implement `Remove Duplicate Lines` code action (preserve order)
-- [ ] **T-326** — Implement `Sort Lines (A→Z)` code action
-- [ ] **T-327** — Implement `Sort Lines (Z→A)` code action
-- [ ] **T-328** — Implement `Sort Lines (by length)` code action
-- [ ] **T-329** — Implement `Reverse Lines` code action (reverse line order, not characters)
-- [ ] **T-330** — Implement `Shuffle Lines` code action (random order)
-- [ ] **T-331** — Implement `Number Lines` code action (prefix each line with its number)
-- [ ] **T-332** — Unit tests for whitespace and line operations
+- [x] **T-320** — Implement `Trim Whitespace` code action (leading + trailing)
+  - [x] Pure function in `transforms/whitespace.rs`
+- [x] **T-321** — Implement `Trim Leading Whitespace` code action
+- [x] **T-322** — Implement `Trim Trailing Whitespace` code action
+- [x] **T-323** — Implement `Collapse Whitespace` code action (multiple spaces/tabs → single space)
+- [x] **T-324** — Implement `Remove Blank Lines` code action
+- [x] **T-325** — Implement `Remove Duplicate Lines` code action (preserve order)
+- [x] **T-326** — Implement `Sort Lines (A→Z)` code action
+- [x] **T-327** — Implement `Sort Lines (Z→A)` code action
+- [x] **T-328** — Implement `Sort Lines (by length)` code action
+- [x] **T-329** — Implement `Reverse Lines` code action (reverse line order, not characters)
+- [x] **T-330** — Implement `Shuffle Lines` code action (random order)
+- [x] **T-331** — Implement `Number Lines` code action (prefix each line with its number)
+- [x] **T-332** — Unit tests for whitespace and line operations
 
 #### Verification
 
-- [ ] `cargo test -p transforms -- whitespace` passes all tests
-- [ ] Sort operations handle Unicode collation correctly
-- [ ] Remove Duplicate Lines preserves first occurrence and original order
-- [ ] Line operations handle trailing newline edge cases
+- [x] `cargo test -p transforms -- whitespace` passes all tests
+- [x] Sort operations handle Unicode collation correctly
+- [x] Remove Duplicate Lines preserves first occurrence and original order
+- [x] Line operations handle trailing newline edge cases
 
 ### EPIC-3.3: String Inspection (Non-Destructive)
 

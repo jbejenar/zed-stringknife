@@ -17,4 +17,5 @@ pub mod jwt;
 pub mod misc;
 pub mod unicode;
 pub mod url;
+pub mod whitespace;
 pub mod xml;

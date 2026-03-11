@@ -15,7 +15,7 @@ use tower_lsp::{Client, LanguageServer, LspService, Server};
 
 use stringknife_core::detect::{detect_encodings, DetectedEncoding};
 use stringknife_core::transforms::{
-    base64, case, csv, hash, hex, html, json, jwt, misc, unicode, url, xml,
+    base64, case, csv, hash, hex, html, json, jwt, misc, unicode, url, whitespace, xml,
 };
 
 /// Document store: maps document URIs to their full text content.
@@ -282,6 +282,56 @@ fn build_actions(uri: &Url, range: Range, selected: &str) -> Vec<CodeActionOrCom
 
     // --- CSV actions (always shown) ---
     try_encode("StringKnife: CSV → JSON Array", csv::csv_to_json(selected));
+
+    // --- Whitespace & line actions (always shown) ---
+    try_encode(
+        "StringKnife: Trim Whitespace",
+        whitespace::trim_whitespace(selected),
+    );
+    try_encode(
+        "StringKnife: Trim Leading",
+        whitespace::trim_leading(selected),
+    );
+    try_encode(
+        "StringKnife: Trim Trailing",
+        whitespace::trim_trailing(selected),
+    );
+    try_encode(
+        "StringKnife: Collapse Whitespace",
+        whitespace::collapse_whitespace(selected),
+    );
+    try_encode(
+        "StringKnife: Remove Blank Lines",
+        whitespace::remove_blank_lines(selected),
+    );
+    try_encode(
+        "StringKnife: Remove Duplicate Lines",
+        whitespace::remove_duplicate_lines(selected),
+    );
+    try_encode(
+        "StringKnife: Sort Lines (A→Z)",
+        whitespace::sort_lines_asc(selected),
+    );
+    try_encode(
+        "StringKnife: Sort Lines (Z→A)",
+        whitespace::sort_lines_desc(selected),
+    );
+    try_encode(
+        "StringKnife: Sort Lines (by length)",
+        whitespace::sort_lines_by_length(selected),
+    );
+    try_encode(
+        "StringKnife: Reverse Lines",
+        whitespace::reverse_lines(selected),
+    );
+    try_encode(
+        "StringKnife: Shuffle Lines",
+        whitespace::shuffle_lines(selected),
+    );
+    try_encode(
+        "StringKnife: Number Lines",
+        whitespace::number_lines(selected),
+    );
 
     // --- Hash actions (one-way, always shown) ---
     try_encode("StringKnife: MD5 Hash", hash::md5(selected));
