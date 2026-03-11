@@ -1,0 +1,15 @@
+[package]
+name = "stringknife-core"
+version = "0.0.1"
+edition = "2021"
+license = "MIT"
+description = "Pure string transformation engine for StringKnife"
+publish = false
+
+[dependencies]
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+unwrap_used = "deny"
+panic = "deny"
