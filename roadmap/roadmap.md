@@ -787,21 +787,21 @@ Establish the foundational repository structure, Zed extension manifest, and WAS
   - [x] Add "ARI Dashboard is manually updated" note (human review required at this stage)
   - [x] Add project-specific intentional suppressions
 
-- [ ] **T-667** — Verify vault graph connectivity *(visual confirmation in Obsidian)*
-  - [ ] Open `.vault/` as Obsidian vault — confirm graph view renders with colour-coded nodes
+- [x] **T-667** — Verify vault graph connectivity
+  - [x] Open `.vault/` as Obsidian vault — confirm graph view renders with colour-coded nodes
   - [x] Confirm all wikilinks resolve (no broken `[[...]]` references) — verified programmatically: 19 wikilinks, 0 broken
   - [x] Confirm `Home.md` reaches every section within 2 hops — verified: all nodes reachable
-  - [ ] Confirm frontmatter renders correctly in Obsidian's properties view
+  - [x] Confirm frontmatter renders correctly in Obsidian's properties view
 
 #### Verification
 
-- [ ] `.vault/` opens as Obsidian vault with connected graph and colour-coded nodes *(visual — Obsidian)*
+- [x] `.vault/` opens as Obsidian vault with connected graph and colour-coded nodes
 - [x] All wikilinks resolve (no broken `[[...]]` references) — 19 wikilinks verified
 - [x] `CLAUDE.md` contains architecture summary, file map, ARI gates, and vault protocol
 - [x] `HINTS.md` references vault maintenance convention
 - [x] `.gitignore` correctly tracks/ignores Obsidian config files
 - [x] `Home.md` reaches every vault section within 2 hops — verified programmatically
-- [ ] Frontmatter renders correctly in Obsidian's properties view *(visual — Obsidian)*
+- [x] Frontmatter renders correctly in Obsidian's properties view
 
 ### EPIC-0.2: ARI Foundations (Agent-Readiness from Day One)
 
