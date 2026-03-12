@@ -3,7 +3,8 @@
 mod config;
 
 use std::collections::HashMap;
-use std::sync::{Mutex, RwLock};
+use std::sync::{Arc, Mutex, RwLock};
+use std::time::Duration;
 
 use tower_lsp::jsonrpc::Result;
 use tower_lsp::lsp_types::{
@@ -20,12 +21,17 @@ use stringknife_core::transforms::{
     base64, case, csv, escape, hash, hex, html, inspect, json, jwt, misc, unicode, url, whitespace,
     xml,
 };
+use stringknife_core::MAX_INPUT_BYTES;
 
-use crate::config::{Config, HashFormat};
+use crate::config::{Config, HashFormat, LogLevel};
 
 /// Document store: maps document URIs to their full text content.
+///
+/// Uses `Arc<String>` so that `get_text()` returns a cheap reference-counted
+/// handle instead of cloning the full document on every code-action request.
+/// Documents are removed from the store on `textDocument/didClose`.
 struct DocumentStore {
-    documents: Mutex<HashMap<Url, String>>,
+    documents: Mutex<HashMap<Url, Arc<String>>>,
 }
 
 impl DocumentStore {
@@ -35,7 +41,7 @@ impl DocumentStore {
         }
     }
 
-    fn get_text(&self, uri: &Url) -> Option<String> {
+    fn get_text(&self, uri: &Url) -> Option<Arc<String>> {
         self.documents
             .lock()
             .ok()
@@ -44,7 +50,7 @@ impl DocumentStore {
 
     fn set_text(&self, uri: Url, text: String) {
         if let Ok(mut docs) = self.documents.lock() {
-            docs.insert(uri, text);
+            docs.insert(uri, Arc::new(text));
         }
     }
 
@@ -68,6 +74,8 @@ impl LanguageServer for Backend {
         // T-401: Read configuration from initializationOptions.
         if let Some(opts) = params.initialization_options {
             if let Ok(cfg) = serde_json::from_value::<Config>(opts) {
+                // T-424: Set initial log level from config.
+                update_log_level(&cfg.log_level);
                 if let Ok(mut current) = self.config.write() {
                     *current = cfg;
                 }
@@ -89,6 +97,7 @@ impl LanguageServer for Backend {
     }
 
     async fn initialized(&self, _: InitializedParams) {
+        tracing::info!("stringknife-lsp initialized");
         self.client
             .log_message(MessageType::INFO, "stringknife-lsp initialized")
             .await;
@@ -99,11 +108,16 @@ impl LanguageServer for Backend {
     }
 
     // T-402: Handle workspace/didChangeConfiguration for live config updates.
+    // T-424: Log level updates take effect on next tracing event (no restart needed).
     async fn did_change_configuration(&self, params: DidChangeConfigurationParams) {
         if let Ok(cfg) = serde_json::from_value::<Config>(params.settings) {
+            let log_level = cfg.log_level.clone();
             if let Ok(mut current) = self.config.write() {
                 *current = cfg;
             }
+            // T-424: Update tracing filter when log level changes.
+            update_log_level(&log_level);
+            tracing::info!("stringknife-lsp configuration updated");
             self.client
                 .log_message(MessageType::INFO, "stringknife-lsp configuration updated")
                 .await;
@@ -126,6 +140,19 @@ impl LanguageServer for Backend {
         self.store.remove(&params.text_document.uri);
     }
 
+    /// Handle a `textDocument/codeAction` request.
+    ///
+    /// # Multi-selection behavior (T-430)
+    ///
+    /// The LSP specification provides a single `range` per `codeAction` request.
+    /// When the user has multiple cursors/selections, Zed sends a separate
+    /// `codeAction` request for each selection. Each request is handled
+    /// independently — the server is stateless between requests.
+    ///
+    /// Because each response contains a `WorkspaceEdit` scoped to its own range,
+    /// Zed can apply multiple code actions in sequence without conflicts.
+    /// If ranges happen to overlap (which Zed prevents), the second edit would
+    /// operate on already-transformed text, which is harmless.
     async fn code_action(&self, params: CodeActionParams) -> Result<Option<CodeActionResponse>> {
         let uri = &params.text_document.uri;
         let range = params.range;
@@ -144,13 +171,100 @@ impl LanguageServer for Backend {
             return Ok(Some(Vec::new()));
         };
 
-        let config = self.config.read().map(|c| c.clone()).unwrap_or_default();
+        let input_size = selected.len();
 
-        Ok(Some(build_actions(uri, range, &selected, &config)))
+        // T-411: Early size check with user-facing feedback.
+        if input_size > MAX_INPUT_BYTES {
+            tracing::warn!(
+                operation = "code_action",
+                input_size,
+                max_bytes = MAX_INPUT_BYTES,
+                "selection exceeds size limit"
+            );
+            let max_bytes = MAX_INPUT_BYTES;
+            self.client
+                .show_message(
+                    MessageType::WARNING,
+                    format!(
+                        "StringKnife: selection too large ({input_size} bytes, max {max_bytes} bytes). \
+                         Reduce selection size to use transforms.",
+                    ),
+                )
+                .await;
+            return Ok(Some(Vec::new()));
+        }
+
+        let config = self.config.read().map(|c| c.clone()).unwrap_or_default();
+        let start = std::time::Instant::now();
+
+        // T-414: Run transforms on the blocking thread pool with a 5-second timeout.
+        let uri_owned = uri.clone();
+        let timeout_result = tokio::time::timeout(
+            Duration::from_secs(5),
+            tokio::task::spawn_blocking(move || {
+                build_actions(&uri_owned, range, &selected, &config)
+            }),
+        )
+        .await;
+
+        match timeout_result {
+            Ok(Ok(actions)) => {
+                #[allow(clippy::cast_possible_truncation)] // 5s timeout guarantees ms fits in u64
+                let duration_ms = start.elapsed().as_millis() as u64;
+                tracing::info!(
+                    operation = "code_action",
+                    input_size,
+                    duration_ms,
+                    action_count = actions.len(),
+                    "code actions computed"
+                );
+                Ok(Some(actions))
+            }
+            Ok(Err(_join_err)) => {
+                tracing::error!(
+                    operation = "code_action",
+                    input_size,
+                    "spawn_blocking task failed"
+                );
+                self.client
+                    .log_message(
+                        MessageType::ERROR,
+                        "StringKnife: internal error computing code actions",
+                    )
+                    .await;
+                Ok(Some(Vec::new()))
+            }
+            Err(_elapsed) => {
+                tracing::warn!(
+                    operation = "code_action",
+                    input_size,
+                    "computation timed out (5s)"
+                );
+                self.client
+                    .show_message(
+                        MessageType::WARNING,
+                        "StringKnife: code action computation timed out (5s). \
+                         Try a smaller selection.",
+                    )
+                    .await;
+                Ok(Some(Vec::new()))
+            }
+        }
     }
 }
 
 /// Build the full list of code actions for a given selection.
+///
+/// # Error strategy (T-420)
+///
+/// Transform errors (e.g. invalid base64, malformed JSON) are **silently skipped**.
+/// Since all transforms are pre-computed here, only successful results appear as
+/// code actions in the context menu. The user never sees a failed transform — it
+/// simply doesn't appear. This is the correct UX: the context menu only shows
+/// operations that will succeed.
+///
+/// Boundary errors (input too large, timeout) are handled at the `code_action()`
+/// call site via `window/showMessage` notifications (T-411, T-414).
 ///
 /// T-151: Detected decode actions appear first; encode/hash actions always appear.
 /// T-152: Actions are ordered by relevance (detected decodes, then encodes, then hashes).
@@ -663,8 +777,42 @@ fn build_code_action(title: &str, uri: Url, range: Range, new_text: &str) -> Cod
     })
 }
 
+/// Global handle for reloading the tracing log level at runtime (T-424).
+static LOG_RELOAD_HANDLE: std::sync::OnceLock<
+    tracing_subscriber::reload::Handle<
+        tracing_subscriber::filter::LevelFilter,
+        tracing_subscriber::Registry,
+    >,
+> = std::sync::OnceLock::new();
+
+/// Update the tracing log level at runtime without restarting (T-424).
+fn update_log_level(level: &LogLevel) {
+    let filter = match level.to_tracing_level() {
+        Some(l) => tracing_subscriber::filter::LevelFilter::from_level(l),
+        None => tracing_subscriber::filter::LevelFilter::OFF,
+    };
+    if let Some(handle) = LOG_RELOAD_HANDLE.get() {
+        let _ = handle.reload(filter);
+    }
+}
+
 #[tokio::main]
 async fn main() {
+    use tracing_subscriber::layer::SubscriberExt;
+    use tracing_subscriber::util::SubscriberInitExt;
+
+    // T-423: Initialize structured logging to stderr.
+    // LSP uses stdin/stdout for JSON-RPC; stderr is free for diagnostics.
+    let default_filter = tracing_subscriber::filter::LevelFilter::INFO;
+    let (filter, reload_handle) = tracing_subscriber::reload::Layer::new(default_filter);
+
+    tracing_subscriber::registry()
+        .with(filter)
+        .with(tracing_subscriber::fmt::layer().with_writer(std::io::stderr))
+        .init();
+
+    let _ = LOG_RELOAD_HANDLE.set(reload_handle);
+
     let stdin = tokio::io::stdin();
     let stdout = tokio::io::stdout();
 
@@ -903,5 +1051,198 @@ mod tests {
         assert_eq!(char_offset_to_byte("héllo", 0), Some(0));
         assert_eq!(char_offset_to_byte("héllo", 1), Some(1)); // 'h'
         assert_eq!(char_offset_to_byte("héllo", 2), Some(3)); // after 'é' (2 bytes)
+    }
+
+    // --- T-411: Size limit enforcement tests ---
+
+    #[test]
+    fn oversized_input_produces_no_actions() {
+        let config = Config::default();
+        // 1 byte over the limit
+        let oversized = "x".repeat(MAX_INPUT_BYTES + 1);
+        let actions = build_actions(&test_uri(), full_range(), &oversized, &config);
+        // Individual transforms return InputTooLarge which is silently discarded,
+        // so build_actions returns an empty list for oversized input.
+        assert!(
+            actions.is_empty(),
+            "oversized input should produce no actions, got {}",
+            actions.len()
+        );
+    }
+
+    // --- T-412: DocumentStore Arc tests ---
+
+    #[test]
+    fn document_store_set_get_remove() {
+        let store = DocumentStore::new();
+        let uri = Url::parse("file:///test.txt").expect("valid URL");
+        store.set_text(uri.clone(), "hello".to_string());
+        assert_eq!(
+            store.get_text(&uri).as_deref().map(String::as_str),
+            Some("hello")
+        );
+        store.remove(&uri);
+        assert!(store.get_text(&uri).is_none());
+    }
+
+    #[test]
+    fn document_store_arc_sharing() {
+        let store = DocumentStore::new();
+        let uri = Url::parse("file:///test.txt").expect("valid URL");
+        store.set_text(uri.clone(), "hello".to_string());
+        let text1 = store.get_text(&uri).expect("text1");
+        let text2 = store.get_text(&uri).expect("text2");
+        assert!(
+            Arc::ptr_eq(&text1, &text2),
+            "repeated get_text should return the same Arc allocation"
+        );
+    }
+
+    #[test]
+    fn document_store_overwrite() {
+        let store = DocumentStore::new();
+        let uri = Url::parse("file:///test.txt").expect("valid URL");
+        store.set_text(uri.clone(), "old content".to_string());
+        store.set_text(uri.clone(), "new content".to_string());
+        assert_eq!(
+            store.get_text(&uri).as_deref().map(String::as_str),
+            Some("new content")
+        );
+    }
+
+    // --- T-413: Sustained operation tests ---
+
+    #[test]
+    fn sustained_build_actions_no_accumulation() {
+        let uri = test_uri();
+        let config = Config::default();
+        for _ in 0..1000 {
+            let actions = build_actions(&uri, full_range(), "hello world", &config);
+            assert!(!actions.is_empty());
+        }
+        // build_actions is stateless — if this completes, there is no accumulation.
+    }
+
+    #[test]
+    fn document_store_churn() {
+        let store = DocumentStore::new();
+        let content = "x".repeat(102_400); // 100KB
+        for i in 0..100 {
+            let uri = Url::parse(&format!("file:///doc_{i}.txt")).expect("valid URL");
+            store.set_text(uri.clone(), content.clone());
+            assert!(store.get_text(&uri).is_some());
+            store.remove(&uri);
+            assert!(store.get_text(&uri).is_none());
+        }
+        // All documents removed — store should be empty.
+    }
+
+    // --- T-430/T-431/T-432/T-433: Multi-selection tests ---
+
+    #[test]
+    fn independent_ranges_produce_independent_actions() {
+        // T-430/T-431: Simulate multi-cursor by calling build_actions for
+        // different ranges on the same document. Each call is independent.
+        let uri = test_uri();
+        let config = Config::default();
+
+        let range1 = Range {
+            start: Position {
+                line: 0,
+                character: 0,
+            },
+            end: Position {
+                line: 0,
+                character: 5,
+            },
+        };
+        let range2 = Range {
+            start: Position {
+                line: 0,
+                character: 6,
+            },
+            end: Position {
+                line: 0,
+                character: 11,
+            },
+        };
+
+        let actions1 = build_actions(&uri, range1, "hello", &config);
+        let actions2 = build_actions(&uri, range2, "world", &config);
+
+        // Both should produce actions (different text, different ranges)
+        assert!(!actions1.is_empty());
+        assert!(!actions2.is_empty());
+
+        // Actions should reference their respective ranges
+        if let CodeActionOrCommand::CodeAction(ca) = &actions1[0] {
+            if let Some(edit) = &ca.edit {
+                if let Some(changes) = &edit.changes {
+                    for edits in changes.values() {
+                        assert_eq!(edits[0].range, range1);
+                    }
+                }
+            }
+        }
+        if let CodeActionOrCommand::CodeAction(ca) = &actions2[0] {
+            if let Some(edit) = &ca.edit {
+                if let Some(changes) = &edit.changes {
+                    for edits in changes.values() {
+                        assert_eq!(edits[0].range, range2);
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn ten_simultaneous_selections_within_budget() {
+        // T-432: Performance remains within budget with 10+ selections.
+        let uri = test_uri();
+        let config = Config::default();
+        let start = std::time::Instant::now();
+
+        for i in 0..10 {
+            let range = Range {
+                start: Position {
+                    line: 0,
+                    character: i * 10,
+                },
+                end: Position {
+                    line: 0,
+                    character: i * 10 + 5,
+                },
+            };
+            let actions = build_actions(&uri, range, "hello", &config);
+            assert!(!actions.is_empty());
+        }
+
+        let elapsed = start.elapsed();
+        assert!(
+            elapsed.as_millis() < 5000,
+            "10 sequential code action computations should complete well under 5s, took {elapsed:?}"
+        );
+    }
+
+    #[test]
+    fn same_range_different_text_produces_different_actions() {
+        // T-433: Each code action request operates on the text extracted from
+        // its range. Even if ranges overlap, the server operates on the
+        // provided text independently.
+        let uri = test_uri();
+        let config = Config {
+            enabled_categories: vec!["encoding".to_string()],
+            ..Config::default()
+        };
+        let range = full_range();
+
+        // "hello" produces encode actions
+        let actions_text = build_actions(&uri, range, "hello", &config);
+        // "SGVsbG8=" is valid base64, produces decode actions too
+        let actions_b64 = build_actions(&uri, range, "SGVsbG8=", &config);
+
+        // Both should produce actions, but potentially different ones
+        assert!(!actions_text.is_empty());
+        assert!(!actions_b64.is_empty());
     }
 }

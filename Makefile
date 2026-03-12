@@ -1,4 +1,4 @@
-.PHONY: all build test lint fmt check clean setup doctor watch
+.PHONY: all build test lint fmt check clean setup doctor watch bench
 
 all: check test lint fmt
 
@@ -31,6 +31,10 @@ fmt-fix:
 check:
 	cargo check --manifest-path stringknife-core/Cargo.toml
 	cargo check --manifest-path stringknife-lsp/Cargo.toml
+
+# Run performance benchmarks (T-410)
+bench:
+	cargo bench --manifest-path stringknife-core/Cargo.toml
 
 # Check WASM extension compiles
 check-wasm:

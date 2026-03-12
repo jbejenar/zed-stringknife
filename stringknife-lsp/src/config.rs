@@ -30,6 +30,25 @@ pub enum HashFormat {
     Uppercase,
 }
 
+/// Log level for structured logging output.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum LogLevel {
+    /// No logging output.
+    Off,
+    /// Only errors.
+    Error,
+    /// Errors and warnings.
+    Warn,
+    /// Errors, warnings, and informational messages (default).
+    #[default]
+    Info,
+    /// Verbose debugging output.
+    Debug,
+    /// Most verbose: trace-level output.
+    Trace,
+}
+
 /// `StringKnife` LSP configuration.
 ///
 /// All fields have sensible defaults. When no configuration is provided,
@@ -63,6 +82,10 @@ pub struct Config {
     /// Whether to wrap Base64 output at 76 characters per line (MIME style).
     /// Default: false.
     pub base64_line_breaks: bool,
+
+    /// Log level for structured logging output to stderr.
+    /// Default: `"info"`.
+    pub log_level: LogLevel,
 }
 
 impl Default for Config {
@@ -74,6 +97,7 @@ impl Default for Config {
             hash_output_format: HashFormat::default(),
             json_indent: 2,
             base64_line_breaks: false,
+            log_level: LogLevel::default(),
         }
     }
 }
@@ -82,6 +106,20 @@ impl Config {
     /// Returns true if the given category is enabled.
     pub fn is_category_enabled(&self, category: &str) -> bool {
         self.enabled_categories.iter().any(|c| c == category)
+    }
+}
+
+impl LogLevel {
+    /// Convert to a `tracing::Level`, or `None` for `Off`.
+    pub fn to_tracing_level(&self) -> Option<tracing::Level> {
+        match self {
+            Self::Off => None,
+            Self::Error => Some(tracing::Level::ERROR),
+            Self::Warn => Some(tracing::Level::WARN),
+            Self::Info => Some(tracing::Level::INFO),
+            Self::Debug => Some(tracing::Level::DEBUG),
+            Self::Trace => Some(tracing::Level::TRACE),
+        }
     }
 }
 
@@ -108,6 +146,7 @@ mod tests {
         assert_eq!(config.hash_output_format, HashFormat::Lowercase);
         assert_eq!(config.json_indent, 2);
         assert!(!config.base64_line_breaks);
+        assert_eq!(config.log_level, LogLevel::Info);
     }
 
     #[test]
@@ -129,7 +168,8 @@ mod tests {
             "smartDetection": false,
             "hashOutputFormat": "uppercase",
             "jsonIndent": 4,
-            "base64LineBreaks": true
+            "base64LineBreaks": true,
+            "logLevel": "debug"
         }"#;
         let config: Config = serde_json::from_str(json).expect("should parse");
         assert_eq!(config.enabled_categories, vec!["encoding", "case"]);
@@ -138,6 +178,7 @@ mod tests {
         assert_eq!(config.hash_output_format, HashFormat::Uppercase);
         assert_eq!(config.json_indent, 4);
         assert!(config.base64_line_breaks);
+        assert_eq!(config.log_level, LogLevel::Debug);
     }
 
     #[test]
@@ -146,6 +187,47 @@ mod tests {
         let config: Config = serde_json::from_str(json).expect("should parse");
         assert_eq!(config.max_code_actions, 50);
         assert!(config.smart_detection);
+    }
+
+    #[test]
+    fn log_level_conversion() {
+        assert!(LogLevel::Off.to_tracing_level().is_none());
+        assert_eq!(
+            LogLevel::Error.to_tracing_level(),
+            Some(tracing::Level::ERROR)
+        );
+        assert_eq!(
+            LogLevel::Warn.to_tracing_level(),
+            Some(tracing::Level::WARN)
+        );
+        assert_eq!(
+            LogLevel::Info.to_tracing_level(),
+            Some(tracing::Level::INFO)
+        );
+        assert_eq!(
+            LogLevel::Debug.to_tracing_level(),
+            Some(tracing::Level::DEBUG)
+        );
+        assert_eq!(
+            LogLevel::Trace.to_tracing_level(),
+            Some(tracing::Level::TRACE)
+        );
+    }
+
+    #[test]
+    fn deserialize_log_level_variants() {
+        for (json_val, expected) in [
+            ("off", LogLevel::Off),
+            ("error", LogLevel::Error),
+            ("warn", LogLevel::Warn),
+            ("info", LogLevel::Info),
+            ("debug", LogLevel::Debug),
+            ("trace", LogLevel::Trace),
+        ] {
+            let json = format!(r#"{{"logLevel": "{json_val}"}}"#);
+            let config: Config = serde_json::from_str(&json).expect("should parse");
+            assert_eq!(config.log_level, expected, "failed for {json_val}");
+        }
     }
 
     #[test]
