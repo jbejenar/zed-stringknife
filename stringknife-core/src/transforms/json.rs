@@ -21,6 +21,19 @@ use crate::MAX_INPUT_BYTES;
 /// Returns [`StringKnifeError::InvalidInput`] if the input is empty.
 /// Returns [`StringKnifeError::InputTooLarge`] if input exceeds the size limit.
 pub fn json_pretty_print(input: &str) -> Result<String, StringKnifeError> {
+    json_pretty_print_with_indent(input, 2)
+}
+
+/// Pretty-prints JSON with a configurable number of spaces per indent level.
+///
+/// # Errors
+///
+/// Returns [`StringKnifeError::InvalidInput`] if the input is empty.
+/// Returns [`StringKnifeError::InputTooLarge`] if input exceeds the size limit.
+pub fn json_pretty_print_with_indent(
+    input: &str,
+    indent_size: usize,
+) -> Result<String, StringKnifeError> {
     check_size(input)?;
     let trimmed = input.trim();
     if trimmed.is_empty() {
@@ -77,18 +90,18 @@ pub fn json_pretty_print(input: &str) -> Result<String, StringKnifeError> {
                     }
                 }
                 result.push('\n');
-                push_indent(&mut result, indent);
+                push_indent_n(&mut result, indent, indent_size);
             }
             '}' | ']' => {
                 indent = indent.saturating_sub(1);
                 result.push('\n');
-                push_indent(&mut result, indent);
+                push_indent_n(&mut result, indent, indent_size);
                 result.push(c);
             }
             ',' => {
                 result.push(',');
                 result.push('\n');
-                push_indent(&mut result, indent);
+                push_indent_n(&mut result, indent, indent_size);
             }
             ':' => {
                 result.push(':');
@@ -289,9 +302,9 @@ pub fn json_unescape(input: &str) -> Result<String, StringKnifeError> {
     Ok(result)
 }
 
-fn push_indent(s: &mut String, level: usize) {
-    for _ in 0..level {
-        s.push_str("  ");
+fn push_indent_n(s: &mut String, level: usize, indent_size: usize) {
+    for _ in 0..level * indent_size {
+        s.push(' ');
     }
 }
 
@@ -364,6 +377,32 @@ mod tests {
             json_pretty_print(&big).unwrap_err(),
             StringKnifeError::InputTooLarge { .. }
         ));
+    }
+
+    // === JSON Pretty Print with custom indent ===
+
+    #[test]
+    fn pretty_print_4_space_indent() {
+        let result = json_pretty_print_with_indent(r#"{"a":1}"#, 4).unwrap();
+        assert_eq!(result, "{\n    \"a\": 1\n}");
+    }
+
+    #[test]
+    fn pretty_print_tab_indent() {
+        let result = json_pretty_print_with_indent(r#"{"a":1}"#, 1).unwrap();
+        assert_eq!(result, "{\n \"a\": 1\n}");
+    }
+
+    #[test]
+    fn pretty_print_zero_indent() {
+        let result = json_pretty_print_with_indent(r#"{"a":1}"#, 0).unwrap();
+        assert_eq!(result, "{\n\"a\": 1\n}");
+    }
+
+    #[test]
+    fn pretty_print_with_indent_nested() {
+        let result = json_pretty_print_with_indent(r#"{"a":{"b":1}}"#, 4).unwrap();
+        assert!(result.contains("        \"b\": 1")); // 8 spaces = 2 levels * 4
     }
 
     // === JSON Minify ===

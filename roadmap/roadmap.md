@@ -1778,7 +1778,7 @@ Implement escape and unescape operations for common contexts: backslashes, regex
 
 **Priority:** High | **Impact:** High | **Effort:** Medium | **Risk:** Low
 **Source:** Product Roadmap v1 — Phase 4
-**Status:** Not Started
+**Status:** Done
 **Dependencies:** EPIC-0.3 (LSP config plumbing)
 **AI-first benefit:** Typed configuration schema with defaults makes agent-driven config changes safe and predictable.
 
@@ -1786,24 +1786,24 @@ Define and implement the LSP configuration schema, allowing users to customise b
 
 #### Definition of Done
 
-- [ ] **T-400** — Define LSP configuration schema (`initializationOptions`)
-  - [ ] `stringknife.enabledCategories`: array of enabled categories (encoding, hashing, case, json, etc.)
-  - [ ] `stringknife.maxCodeActions`: max number of code actions shown (default: 20)
-  - [ ] `stringknife.smartDetection`: boolean to enable/disable smart decode suggestions (default: true)
-  - [ ] `stringknife.hashOutputFormat`: `"lowercase"` | `"uppercase"` (default: lowercase)
-  - [ ] `stringknife.jsonIndent`: number of spaces for pretty print (default: 2)
-  - [ ] `stringknife.base64LineBreaks`: boolean for 76-char line wrapping (default: false)
-- [ ] **T-401** — Read configuration from Zed settings via `initializationOptions`
-- [ ] **T-402** — Handle `workspace/didChangeConfiguration` for live config updates
-- [ ] **T-403** — Document all configuration options in README
-- [ ] **T-404** — Add example Zed `settings.json` snippet to README
+- [x] **T-400** — Define LSP configuration schema (`initializationOptions`)
+  - [x] `stringknife.enabledCategories`: array of enabled categories (encoding, hashing, case, json, etc.)
+  - [x] `stringknife.maxCodeActions`: max number of code actions shown (default: 50)
+  - [x] `stringknife.smartDetection`: boolean to enable/disable smart decode suggestions (default: true)
+  - [x] `stringknife.hashOutputFormat`: `"lowercase"` | `"uppercase"` (default: lowercase)
+  - [x] `stringknife.jsonIndent`: number of spaces for pretty print (default: 2)
+  - [x] `stringknife.base64LineBreaks`: boolean for 76-char line wrapping (default: false)
+- [x] **T-401** — Read configuration from Zed settings via `initializationOptions`
+- [x] **T-402** — Handle `workspace/didChangeConfiguration` for live config updates
+- [x] **T-403** — Document all configuration options in README
+- [x] **T-404** — Add example Zed `settings.json` snippet to README
 
 #### Verification
 
-- [ ] Changing `settings.json` updates behavior without restarting Zed
-- [ ] Disabling a category removes its code actions from the context menu
-- [ ] Default values work correctly when no config is provided
-- [ ] README configuration reference table matches actual behavior
+- [ ] Changing `settings.json` updates behavior without restarting Zed *(needs manual Zed test)*
+- [x] Disabling a category removes its code actions from the context menu
+- [x] Default values work correctly when no config is provided
+- [x] README configuration reference table matches actual behavior
 
 ### EPIC-4.2: Performance & Large Input Handling
 

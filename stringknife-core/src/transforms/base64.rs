@@ -72,6 +72,27 @@ pub fn base64url_decode(input: &str) -> Result<String, StringKnifeError> {
     })
 }
 
+/// Encodes the input string to standard Base64 with MIME-style line wrapping.
+///
+/// Output is wrapped at 76 characters per line (per RFC 2045) with CRLF line endings.
+///
+/// # Errors
+///
+/// Returns [`StringKnifeError::InputTooLarge`] if input exceeds [`MAX_INPUT_BYTES`].
+pub fn base64_encode_wrapped(input: &str) -> Result<String, StringKnifeError> {
+    check_size(input)?;
+    let raw = encode_bytes(input.as_bytes(), STANDARD_ALPHABET, true);
+    let mut result = String::with_capacity(raw.len() + raw.len() / 76 * 2);
+    for (i, ch) in raw.chars().enumerate() {
+        if i > 0 && i % 76 == 0 {
+            result.push('\r');
+            result.push('\n');
+        }
+        result.push(ch);
+    }
+    Ok(result)
+}
+
 fn encode_bytes(bytes: &[u8], alphabet: &[u8; 64], pad: bool) -> String {
     let mut result = String::with_capacity(bytes.len().div_ceil(3) * 4);
     for chunk in bytes.chunks(3) {
@@ -293,6 +314,44 @@ mod tests {
         let encoded = base64url_encode("AB").unwrap();
         let padded = format!("{encoded}=");
         assert_eq!(base64url_decode(&padded).unwrap(), "AB");
+    }
+
+    // === Base64 Wrapped Encode ===
+
+    #[test]
+    fn wrapped_encode_short() {
+        // Short input should not have line breaks
+        let result = base64_encode_wrapped("Hello").unwrap();
+        assert!(!result.contains('\n'));
+        assert_eq!(result, "SGVsbG8=");
+    }
+
+    #[test]
+    fn wrapped_encode_long() {
+        // 57 bytes of input = 76 base64 chars = exactly one line, no wrap
+        let input = "a".repeat(57);
+        let result = base64_encode_wrapped(&input).unwrap();
+        assert!(!result.contains('\n'));
+        assert_eq!(result.len(), 76);
+    }
+
+    #[test]
+    fn wrapped_encode_wraps_at_76() {
+        // 58 bytes of input = 80 base64 chars = should wrap
+        let input = "a".repeat(58);
+        let result = base64_encode_wrapped(&input).unwrap();
+        assert!(result.contains("\r\n"));
+        let lines: Vec<&str> = result.split("\r\n").collect();
+        assert_eq!(lines[0].len(), 76);
+    }
+
+    #[test]
+    fn wrapped_roundtrip() {
+        let input = "a".repeat(200);
+        let wrapped = base64_encode_wrapped(&input).unwrap();
+        // base64_decode strips whitespace, so roundtrip should work
+        let decoded = base64_decode(&wrapped).unwrap();
+        assert_eq!(decoded, input);
     }
 
     // === Size limits ===
