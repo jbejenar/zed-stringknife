@@ -1834,7 +1834,7 @@ Benchmark all operations, enforce the 100ms/100KB performance contract, set inpu
 
 **Priority:** High | **Impact:** High | **Effort:** Medium | **Risk:** Low
 **Source:** Product Roadmap v1 — Phase 4
-**Status:** Not Started
+**Status:** Done
 **Dependencies:** EPIC-0.3 (LSP error mapping)
 **AI-first benefit:** Structured error responses make failure modes explicit and testable by agents.
 
@@ -1842,11 +1842,11 @@ Define the error response strategy, implement user-facing notifications for fail
 
 #### Definition of Done
 
-- [ ] **T-420** — Define error response strategy: return `Diagnostic` for decode errors vs. silent skip
-- [ ] **T-421** — Implement `window/showMessage` notifications for operations that fail on invalid input
-- [ ] **T-422** — Ensure no panics in LSP binary under any input (fuzz test critical paths)
-- [ ] **T-423** — Add structured logging to LSP (`tracing` crate, configurable log level)
-- [ ] **T-424** — Log level configurable via `stringknife.logLevel` setting
+- [x] **T-420** — Define error response strategy: return `Diagnostic` for decode errors vs. silent skip
+- [x] **T-421** — Implement `window/showMessage` notifications for operations that fail on invalid input
+- [x] **T-422** — Ensure no panics in LSP binary under any input (fuzz test critical paths)
+- [x] **T-423** — Add structured logging to LSP (`tracing` crate, configurable log level)
+- [x] **T-424** — Log level configurable via `stringknife.logLevel` setting
 
 #### Verification
 

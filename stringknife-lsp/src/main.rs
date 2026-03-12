@@ -23,7 +23,7 @@ use stringknife_core::transforms::{
 };
 use stringknife_core::MAX_INPUT_BYTES;
 
-use crate::config::{Config, HashFormat};
+use crate::config::{Config, HashFormat, LogLevel};
 
 /// Document store: maps document URIs to their full text content.
 ///
@@ -74,6 +74,8 @@ impl LanguageServer for Backend {
         // T-401: Read configuration from initializationOptions.
         if let Some(opts) = params.initialization_options {
             if let Ok(cfg) = serde_json::from_value::<Config>(opts) {
+                // T-424: Set initial log level from config.
+                update_log_level(&cfg.log_level);
                 if let Ok(mut current) = self.config.write() {
                     *current = cfg;
                 }
@@ -95,6 +97,7 @@ impl LanguageServer for Backend {
     }
 
     async fn initialized(&self, _: InitializedParams) {
+        tracing::info!("stringknife-lsp initialized");
         self.client
             .log_message(MessageType::INFO, "stringknife-lsp initialized")
             .await;
@@ -105,11 +108,16 @@ impl LanguageServer for Backend {
     }
 
     // T-402: Handle workspace/didChangeConfiguration for live config updates.
+    // T-424: Log level updates take effect on next tracing event (no restart needed).
     async fn did_change_configuration(&self, params: DidChangeConfigurationParams) {
         if let Ok(cfg) = serde_json::from_value::<Config>(params.settings) {
+            let log_level = cfg.log_level.clone();
             if let Ok(mut current) = self.config.write() {
                 *current = cfg;
             }
+            // T-424: Update tracing filter when log level changes.
+            update_log_level(&log_level);
+            tracing::info!("stringknife-lsp configuration updated");
             self.client
                 .log_message(MessageType::INFO, "stringknife-lsp configuration updated")
                 .await;
@@ -150,16 +158,23 @@ impl LanguageServer for Backend {
             return Ok(Some(Vec::new()));
         };
 
+        let input_size = selected.len();
+
         // T-411: Early size check with user-facing feedback.
-        if selected.len() > MAX_INPUT_BYTES {
+        if input_size > MAX_INPUT_BYTES {
+            tracing::warn!(
+                operation = "code_action",
+                input_size,
+                max_bytes = MAX_INPUT_BYTES,
+                "selection exceeds size limit"
+            );
+            let max_bytes = MAX_INPUT_BYTES;
             self.client
                 .show_message(
                     MessageType::WARNING,
                     format!(
-                        "StringKnife: selection too large ({} bytes, max {} bytes). \
+                        "StringKnife: selection too large ({input_size} bytes, max {max_bytes} bytes). \
                          Reduce selection size to use transforms.",
-                        selected.len(),
-                        MAX_INPUT_BYTES,
                     ),
                 )
                 .await;
@@ -167,6 +182,7 @@ impl LanguageServer for Backend {
         }
 
         let config = self.config.read().map(|c| c.clone()).unwrap_or_default();
+        let start = std::time::Instant::now();
 
         // T-414: Run transforms on the blocking thread pool with a 5-second timeout.
         let uri_owned = uri.clone();
@@ -179,8 +195,24 @@ impl LanguageServer for Backend {
         .await;
 
         match timeout_result {
-            Ok(Ok(actions)) => Ok(Some(actions)),
+            Ok(Ok(actions)) => {
+                #[allow(clippy::cast_possible_truncation)] // 5s timeout guarantees ms fits in u64
+                let duration_ms = start.elapsed().as_millis() as u64;
+                tracing::info!(
+                    operation = "code_action",
+                    input_size,
+                    duration_ms,
+                    action_count = actions.len(),
+                    "code actions computed"
+                );
+                Ok(Some(actions))
+            }
             Ok(Err(_join_err)) => {
+                tracing::error!(
+                    operation = "code_action",
+                    input_size,
+                    "spawn_blocking task failed"
+                );
                 self.client
                     .log_message(
                         MessageType::ERROR,
@@ -190,6 +222,11 @@ impl LanguageServer for Backend {
                 Ok(Some(Vec::new()))
             }
             Err(_elapsed) => {
+                tracing::warn!(
+                    operation = "code_action",
+                    input_size,
+                    "computation timed out (5s)"
+                );
                 self.client
                     .show_message(
                         MessageType::WARNING,
@@ -204,6 +241,17 @@ impl LanguageServer for Backend {
 }
 
 /// Build the full list of code actions for a given selection.
+///
+/// # Error strategy (T-420)
+///
+/// Transform errors (e.g. invalid base64, malformed JSON) are **silently skipped**.
+/// Since all transforms are pre-computed here, only successful results appear as
+/// code actions in the context menu. The user never sees a failed transform — it
+/// simply doesn't appear. This is the correct UX: the context menu only shows
+/// operations that will succeed.
+///
+/// Boundary errors (input too large, timeout) are handled at the `code_action()`
+/// call site via `window/showMessage` notifications (T-411, T-414).
 ///
 /// T-151: Detected decode actions appear first; encode/hash actions always appear.
 /// T-152: Actions are ordered by relevance (detected decodes, then encodes, then hashes).
@@ -716,8 +764,42 @@ fn build_code_action(title: &str, uri: Url, range: Range, new_text: &str) -> Cod
     })
 }
 
+/// Global handle for reloading the tracing log level at runtime (T-424).
+static LOG_RELOAD_HANDLE: std::sync::OnceLock<
+    tracing_subscriber::reload::Handle<
+        tracing_subscriber::filter::LevelFilter,
+        tracing_subscriber::Registry,
+    >,
+> = std::sync::OnceLock::new();
+
+/// Update the tracing log level at runtime without restarting (T-424).
+fn update_log_level(level: &LogLevel) {
+    let filter = match level.to_tracing_level() {
+        Some(l) => tracing_subscriber::filter::LevelFilter::from_level(l),
+        None => tracing_subscriber::filter::LevelFilter::OFF,
+    };
+    if let Some(handle) = LOG_RELOAD_HANDLE.get() {
+        let _ = handle.reload(filter);
+    }
+}
+
 #[tokio::main]
 async fn main() {
+    use tracing_subscriber::layer::SubscriberExt;
+    use tracing_subscriber::util::SubscriberInitExt;
+
+    // T-423: Initialize structured logging to stderr.
+    // LSP uses stdin/stdout for JSON-RPC; stderr is free for diagnostics.
+    let default_filter = tracing_subscriber::filter::LevelFilter::INFO;
+    let (filter, reload_handle) = tracing_subscriber::reload::Layer::new(default_filter);
+
+    tracing_subscriber::registry()
+        .with(filter)
+        .with(tracing_subscriber::fmt::layer().with_writer(std::io::stderr))
+        .init();
+
+    let _ = LOG_RELOAD_HANDLE.set(reload_handle);
+
     let stdin = tokio::io::stdin();
     let stdout = tokio::io::stdout();
 
