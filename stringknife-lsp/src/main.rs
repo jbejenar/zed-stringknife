@@ -1,15 +1,17 @@
 //! `StringKnife` Language Server — LSP binary entry point.
 
+mod config;
+
 use std::collections::HashMap;
-use std::sync::Mutex;
+use std::sync::{Mutex, RwLock};
 
 use tower_lsp::jsonrpc::Result;
 use tower_lsp::lsp_types::{
     CodeAction, CodeActionKind, CodeActionOrCommand, CodeActionParams,
-    CodeActionProviderCapability, CodeActionResponse, DidChangeTextDocumentParams,
-    DidCloseTextDocumentParams, DidOpenTextDocumentParams, InitializeParams, InitializeResult,
-    InitializedParams, MessageType, Range, ServerCapabilities, ServerInfo,
-    TextDocumentSyncCapability, TextDocumentSyncKind, TextEdit, Url, WorkspaceEdit,
+    CodeActionProviderCapability, CodeActionResponse, DidChangeConfigurationParams,
+    DidChangeTextDocumentParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams,
+    InitializeParams, InitializeResult, InitializedParams, MessageType, Range, ServerCapabilities,
+    ServerInfo, TextDocumentSyncCapability, TextDocumentSyncKind, TextEdit, Url, WorkspaceEdit,
 };
 use tower_lsp::{Client, LanguageServer, LspService, Server};
 
@@ -18,6 +20,8 @@ use stringknife_core::transforms::{
     base64, case, csv, escape, hash, hex, html, inspect, json, jwt, misc, unicode, url, whitespace,
     xml,
 };
+
+use crate::config::{Config, HashFormat};
 
 /// Document store: maps document URIs to their full text content.
 struct DocumentStore {
@@ -55,11 +59,20 @@ impl DocumentStore {
 struct Backend {
     client: Client,
     store: DocumentStore,
+    config: RwLock<Config>,
 }
 
 #[tower_lsp::async_trait]
 impl LanguageServer for Backend {
-    async fn initialize(&self, _: InitializeParams) -> Result<InitializeResult> {
+    async fn initialize(&self, params: InitializeParams) -> Result<InitializeResult> {
+        // T-401: Read configuration from initializationOptions.
+        if let Some(opts) = params.initialization_options {
+            if let Ok(cfg) = serde_json::from_value::<Config>(opts) {
+                if let Ok(mut current) = self.config.write() {
+                    *current = cfg;
+                }
+            }
+        }
         Ok(InitializeResult {
             server_info: Some(ServerInfo {
                 name: "stringknife-lsp".to_string(),
@@ -83,6 +96,18 @@ impl LanguageServer for Backend {
 
     async fn shutdown(&self) -> Result<()> {
         Ok(())
+    }
+
+    // T-402: Handle workspace/didChangeConfiguration for live config updates.
+    async fn did_change_configuration(&self, params: DidChangeConfigurationParams) {
+        if let Ok(cfg) = serde_json::from_value::<Config>(params.settings) {
+            if let Ok(mut current) = self.config.write() {
+                *current = cfg;
+            }
+            self.client
+                .log_message(MessageType::INFO, "stringknife-lsp configuration updated")
+                .await;
+        }
     }
 
     async fn did_open(&self, params: DidOpenTextDocumentParams) {
@@ -119,7 +144,9 @@ impl LanguageServer for Backend {
             return Ok(Some(Vec::new()));
         };
 
-        Ok(Some(build_actions(uri, range, &selected)))
+        let config = self.config.read().map(|c| c.clone()).unwrap_or_default();
+
+        Ok(Some(build_actions(uri, range, &selected, &config)))
     }
 }
 
@@ -127,21 +154,35 @@ impl LanguageServer for Backend {
 ///
 /// T-151: Detected decode actions appear first; encode/hash actions always appear.
 /// T-152: Actions are ordered by relevance (detected decodes, then encodes, then hashes).
+/// T-400: Actions are filtered by `config.enabled_categories` and truncated to
+///         `config.max_code_actions`.
 #[allow(clippy::too_many_lines)] // flat action registration list, splitting adds no clarity
-fn build_actions(uri: &Url, range: Range, selected: &str) -> Vec<CodeActionOrCommand> {
+fn build_actions(
+    uri: &Url,
+    range: Range,
+    selected: &str,
+    config: &Config,
+) -> Vec<CodeActionOrCommand> {
     let detected = detect_encodings(selected);
 
     let mut detected_actions = Vec::new();
     let mut encode_actions = Vec::new();
 
+    // T-400: closure that respects smart_detection config.
+    // When smart_detection is true (default), decode actions only appear if detected.
+    // When false, decode actions appear unconditionally (like encode actions).
     let mut try_decode =
         |title: &str,
+         category: &str,
          encoding: DetectedEncoding,
          result: std::result::Result<String, stringknife_core::StringKnifeError>| {
+            if !config.is_category_enabled(category) {
+                return;
+            }
             if let Ok(ref transformed) = result {
                 if *transformed != *selected {
                     let action = build_code_action(title, uri.clone(), range, transformed);
-                    if detected.contains(&encoding) {
+                    if !config.smart_detection || detected.contains(&encoding) {
                         detected_actions.push(action);
                     }
                 }
@@ -149,7 +190,12 @@ fn build_actions(uri: &Url, range: Range, selected: &str) -> Vec<CodeActionOrCom
         };
 
     let mut try_encode =
-        |title: &str, result: std::result::Result<String, stringknife_core::StringKnifeError>| {
+        |title: &str,
+         category: &str,
+         result: std::result::Result<String, stringknife_core::StringKnifeError>| {
+            if !config.is_category_enabled(category) {
+                return;
+            }
             if let Ok(ref transformed) = result {
                 if *transformed != *selected {
                     encode_actions.push(build_code_action(title, uri.clone(), range, transformed));
@@ -157,34 +203,40 @@ fn build_actions(uri: &Url, range: Range, selected: &str) -> Vec<CodeActionOrCom
             }
         };
 
-    // --- Decode actions (only shown if detected) ---
+    // --- Decode actions (shown if detected, or always if smart_detection is off) ---
     try_decode(
         "StringKnife: Base64 Decode",
+        "encoding",
         DetectedEncoding::Base64,
         base64::base64_decode(selected),
     );
     try_decode(
         "StringKnife: Base64URL Decode",
+        "encoding",
         DetectedEncoding::Base64,
         base64::base64url_decode(selected),
     );
     try_decode(
         "StringKnife: URL Decode",
+        "encoding",
         DetectedEncoding::UrlEncoded,
         url::url_decode(selected),
     );
     try_decode(
         "StringKnife: HTML Decode",
+        "encoding",
         DetectedEncoding::HtmlEntity,
         html::html_decode(selected),
     );
     try_decode(
         "StringKnife: Hex Decode",
+        "encoding",
         DetectedEncoding::Hex,
         hex::hex_decode(selected),
     );
     try_decode(
         "StringKnife: Unicode Unescape",
+        "encoding",
         DetectedEncoding::UnicodeEscape,
         unicode::unicode_unescape(selected),
     );
@@ -192,195 +244,339 @@ fn build_actions(uri: &Url, range: Range, selected: &str) -> Vec<CodeActionOrCom
     // JWT decode (shown if JWT detected)
     try_decode(
         "StringKnife: JWT Decode Header",
+        "encoding",
         DetectedEncoding::Jwt,
         jwt::jwt_decode_header(selected),
     );
     try_decode(
         "StringKnife: JWT Decode Payload",
+        "encoding",
         DetectedEncoding::Jwt,
         jwt::jwt_decode_payload(selected),
     );
     try_decode(
         "StringKnife: JWT Decode (Full)",
+        "encoding",
         DetectedEncoding::Jwt,
         jwt::jwt_decode_full(selected),
     );
 
-    // --- Encode actions (always shown) ---
-    try_encode(
-        "StringKnife: Base64 Encode",
-        base64::base64_encode(selected),
-    );
+    // --- Encode actions (always shown if category enabled) ---
+
+    // T-400: Use config.base64_line_breaks to decide which encode variant to use.
+    if config.base64_line_breaks {
+        try_encode(
+            "StringKnife: Base64 Encode (wrapped)",
+            "encoding",
+            base64::base64_encode_wrapped(selected),
+        );
+    } else {
+        try_encode(
+            "StringKnife: Base64 Encode",
+            "encoding",
+            base64::base64_encode(selected),
+        );
+    }
     try_encode(
         "StringKnife: Base64URL Encode",
+        "encoding",
         base64::base64url_encode(selected),
     );
-    try_encode("StringKnife: URL Encode", url::url_encode(selected));
+    try_encode(
+        "StringKnife: URL Encode",
+        "encoding",
+        url::url_encode(selected),
+    );
     try_encode(
         "StringKnife: URL Encode (Component)",
+        "encoding",
         url::url_encode_component(selected),
     );
-    try_encode("StringKnife: HTML Encode", html::html_encode(selected));
-    try_encode("StringKnife: Hex Encode", hex::hex_encode(selected));
+    try_encode(
+        "StringKnife: HTML Encode",
+        "encoding",
+        html::html_encode(selected),
+    );
+    try_encode(
+        "StringKnife: Hex Encode",
+        "encoding",
+        hex::hex_encode(selected),
+    );
     try_encode(
         "StringKnife: Unicode Escape",
+        "encoding",
         unicode::unicode_escape(selected),
     );
     try_encode(
         "StringKnife: Show Unicode Codepoints",
+        "encoding",
         unicode::show_codepoints(selected),
     );
     try_encode(
         "StringKnife: Reverse String",
+        "misc",
         misc::reverse_string(selected),
     );
 
-    // --- Case conversion actions (always shown) ---
-    try_encode("StringKnife: To UPPERCASE", case::to_upper(selected));
-    try_encode("StringKnife: To lowercase", case::to_lower(selected));
-    try_encode("StringKnife: To Title Case", case::to_title_case(selected));
+    // --- Case conversion actions ---
+    try_encode(
+        "StringKnife: To UPPERCASE",
+        "case",
+        case::to_upper(selected),
+    );
+    try_encode(
+        "StringKnife: To lowercase",
+        "case",
+        case::to_lower(selected),
+    );
+    try_encode(
+        "StringKnife: To Title Case",
+        "case",
+        case::to_title_case(selected),
+    );
     try_encode(
         "StringKnife: To Sentence Case",
+        "case",
         case::to_sentence_case(selected),
     );
-    try_encode("StringKnife: To camelCase", case::to_camel_case(selected));
-    try_encode("StringKnife: To PascalCase", case::to_pascal_case(selected));
-    try_encode("StringKnife: To snake_case", case::to_snake_case(selected));
+    try_encode(
+        "StringKnife: To camelCase",
+        "case",
+        case::to_camel_case(selected),
+    );
+    try_encode(
+        "StringKnife: To PascalCase",
+        "case",
+        case::to_pascal_case(selected),
+    );
+    try_encode(
+        "StringKnife: To snake_case",
+        "case",
+        case::to_snake_case(selected),
+    );
     try_encode(
         "StringKnife: To SCREAMING_SNAKE_CASE",
+        "case",
         case::to_screaming_snake_case(selected),
     );
-    try_encode("StringKnife: To kebab-case", case::to_kebab_case(selected));
-    try_encode("StringKnife: To dot.case", case::to_dot_case(selected));
-    try_encode("StringKnife: To path/case", case::to_path_case(selected));
+    try_encode(
+        "StringKnife: To kebab-case",
+        "case",
+        case::to_kebab_case(selected),
+    );
+    try_encode(
+        "StringKnife: To dot.case",
+        "case",
+        case::to_dot_case(selected),
+    );
+    try_encode(
+        "StringKnife: To path/case",
+        "case",
+        case::to_path_case(selected),
+    );
     try_encode(
         "StringKnife: To CONSTANT_CASE",
+        "case",
         case::to_constant_case(selected),
     );
-    try_encode("StringKnife: Toggle Case", case::toggle_case(selected));
+    try_encode(
+        "StringKnife: Toggle Case",
+        "case",
+        case::toggle_case(selected),
+    );
 
-    // --- JSON actions (always shown) ---
+    // --- JSON actions ---
+    // T-400: Use config.json_indent for pretty print.
     try_encode(
         "StringKnife: JSON Pretty Print",
-        json::json_pretty_print(selected),
+        "json",
+        json::json_pretty_print_with_indent(selected, config.json_indent),
     );
-    try_encode("StringKnife: JSON Minify", json::json_minify(selected));
+    try_encode(
+        "StringKnife: JSON Minify",
+        "json",
+        json::json_minify(selected),
+    );
     try_encode(
         "StringKnife: JSON Escape String",
+        "json",
         json::json_escape(selected),
     );
     try_encode(
         "StringKnife: JSON Unescape String",
+        "json",
         json::json_unescape(selected),
     );
 
-    // --- XML actions (always shown) ---
+    // --- XML actions ---
     try_encode(
         "StringKnife: XML Pretty Print",
+        "xml",
         xml::xml_pretty_print(selected),
     );
-    try_encode("StringKnife: XML Minify", xml::xml_minify(selected));
+    try_encode("StringKnife: XML Minify", "xml", xml::xml_minify(selected));
 
-    // --- CSV actions (always shown) ---
-    try_encode("StringKnife: CSV → JSON Array", csv::csv_to_json(selected));
+    // --- CSV actions ---
+    try_encode(
+        "StringKnife: CSV → JSON Array",
+        "csv",
+        csv::csv_to_json(selected),
+    );
 
-    // --- Whitespace & line actions (always shown) ---
+    // --- Whitespace & line actions ---
     try_encode(
         "StringKnife: Trim Whitespace",
+        "whitespace",
         whitespace::trim_whitespace(selected),
     );
     try_encode(
         "StringKnife: Trim Leading",
+        "whitespace",
         whitespace::trim_leading(selected),
     );
     try_encode(
         "StringKnife: Trim Trailing",
+        "whitespace",
         whitespace::trim_trailing(selected),
     );
     try_encode(
         "StringKnife: Collapse Whitespace",
+        "whitespace",
         whitespace::collapse_whitespace(selected),
     );
     try_encode(
         "StringKnife: Remove Blank Lines",
+        "whitespace",
         whitespace::remove_blank_lines(selected),
     );
     try_encode(
         "StringKnife: Remove Duplicate Lines",
+        "whitespace",
         whitespace::remove_duplicate_lines(selected),
     );
     try_encode(
         "StringKnife: Sort Lines (A→Z)",
+        "whitespace",
         whitespace::sort_lines_asc(selected),
     );
     try_encode(
         "StringKnife: Sort Lines (Z→A)",
+        "whitespace",
         whitespace::sort_lines_desc(selected),
     );
     try_encode(
         "StringKnife: Sort Lines (by length)",
+        "whitespace",
         whitespace::sort_lines_by_length(selected),
     );
     try_encode(
         "StringKnife: Reverse Lines",
+        "whitespace",
         whitespace::reverse_lines(selected),
     );
     try_encode(
         "StringKnife: Shuffle Lines",
+        "whitespace",
         whitespace::shuffle_lines(selected),
     );
     try_encode(
         "StringKnife: Number Lines",
+        "whitespace",
         whitespace::number_lines(selected),
     );
 
-    // --- Hash actions (one-way, always shown) ---
-    try_encode("StringKnife: MD5 Hash", hash::md5(selected));
-    try_encode("StringKnife: SHA-1 Hash", hash::sha1(selected));
-    try_encode("StringKnife: SHA-256 Hash", hash::sha256(selected));
-    try_encode("StringKnife: SHA-512 Hash", hash::sha512(selected));
-    try_encode("StringKnife: CRC32 Checksum", hash::crc32(selected));
+    // --- Hash actions (one-way) ---
+    // T-400: Apply config.hash_output_format (uppercase if configured).
+    let format_hash = |result: std::result::Result<String, stringknife_core::StringKnifeError>| {
+        result.map(|h| {
+            if config.hash_output_format == HashFormat::Uppercase {
+                h.to_ascii_uppercase()
+            } else {
+                h
+            }
+        })
+    };
+    try_encode(
+        "StringKnife: MD5 Hash",
+        "hashing",
+        format_hash(hash::md5(selected)),
+    );
+    try_encode(
+        "StringKnife: SHA-1 Hash",
+        "hashing",
+        format_hash(hash::sha1(selected)),
+    );
+    try_encode(
+        "StringKnife: SHA-256 Hash",
+        "hashing",
+        format_hash(hash::sha256(selected)),
+    );
+    try_encode(
+        "StringKnife: SHA-512 Hash",
+        "hashing",
+        format_hash(hash::sha512(selected)),
+    );
+    try_encode(
+        "StringKnife: CRC32 Checksum",
+        "hashing",
+        format_hash(hash::crc32(selected)),
+    );
 
-    // --- Escape actions (always shown) ---
+    // --- Escape actions ---
     try_encode(
         "StringKnife: Escape Backslashes",
+        "escape",
         escape::escape_backslashes(selected),
     );
     try_encode(
         "StringKnife: Unescape Backslashes",
+        "escape",
         escape::unescape_backslashes(selected),
     );
-    try_encode("StringKnife: Escape Regex", escape::escape_regex(selected));
+    try_encode(
+        "StringKnife: Escape Regex",
+        "escape",
+        escape::escape_regex(selected),
+    );
     try_encode(
         "StringKnife: Escape SQL String",
+        "escape",
         escape::escape_sql(selected),
     );
     try_encode(
         "StringKnife: Escape Shell String",
+        "escape",
         escape::escape_shell(selected),
     );
     try_encode(
         "StringKnife: Escape CSV Field",
+        "escape",
         escape::escape_csv(selected),
     );
 
-    // --- Inspection actions (always shown) ---
+    // --- Inspection actions ---
     try_encode(
         "StringKnife: Count Characters",
+        "inspect",
         inspect::count_chars(selected),
     );
     try_encode(
         "StringKnife: String Length (bytes)",
+        "inspect",
         inspect::byte_length(selected),
     );
     try_encode(
         "StringKnife: Detect Encoding",
+        "inspect",
         inspect::detect_encoding(selected),
     );
 
     // T-152: Detected decodes first, then all encode/misc/hash actions.
     let mut actions = detected_actions;
     actions.extend(encode_actions);
+
+    // T-400: Enforce max_code_actions limit.
+    actions.truncate(config.max_code_actions);
     actions
 }
 
@@ -475,6 +671,7 @@ async fn main() {
     let (service, socket) = LspService::new(|client| Backend {
         client,
         store: DocumentStore::new(),
+        config: RwLock::new(Config::default()),
     });
     Server::new(stdin, stdout, socket).serve(service).await;
 }
@@ -483,6 +680,167 @@ async fn main() {
 mod tests {
     use super::*;
     use tower_lsp::lsp_types::Position;
+
+    fn test_uri() -> Url {
+        Url::parse("file:///test.txt").expect("valid URL")
+    }
+
+    fn full_range() -> Range {
+        Range {
+            start: Position {
+                line: 0,
+                character: 0,
+            },
+            end: Position {
+                line: 0,
+                character: 100,
+            },
+        }
+    }
+
+    // --- Config integration tests ---
+
+    #[test]
+    fn default_config_produces_actions() {
+        let config = Config::default();
+        let actions = build_actions(&test_uri(), full_range(), "hello world", &config);
+        assert!(!actions.is_empty(), "default config should produce actions");
+    }
+
+    #[test]
+    fn disable_all_categories_produces_no_actions() {
+        let config = Config {
+            enabled_categories: Vec::new(),
+            ..Config::default()
+        };
+        let actions = build_actions(&test_uri(), full_range(), "hello world", &config);
+        assert!(
+            actions.is_empty(),
+            "no categories enabled should produce no actions"
+        );
+    }
+
+    #[test]
+    fn enable_only_case_category() {
+        let config = Config {
+            enabled_categories: vec!["case".to_string()],
+            ..Config::default()
+        };
+        let actions = build_actions(&test_uri(), full_range(), "hello world", &config);
+        assert!(!actions.is_empty());
+        for action in &actions {
+            if let CodeActionOrCommand::CodeAction(a) = action {
+                assert!(
+                    a.title.contains("Case")
+                        || a.title.contains("UPPER")
+                        || a.title.contains("lower")
+                        || a.title.contains("camel")
+                        || a.title.contains("Pascal")
+                        || a.title.contains("snake")
+                        || a.title.contains("SCREAMING")
+                        || a.title.contains("kebab")
+                        || a.title.contains("dot")
+                        || a.title.contains("path")
+                        || a.title.contains("CONSTANT")
+                        || a.title.contains("Toggle"),
+                    "expected only case actions, got: {}",
+                    a.title
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn max_code_actions_truncates() {
+        let config = Config {
+            max_code_actions: 3,
+            ..Config::default()
+        };
+        let actions = build_actions(&test_uri(), full_range(), "hello world", &config);
+        assert!(
+            actions.len() <= 3,
+            "expected at most 3 actions, got {}",
+            actions.len()
+        );
+    }
+
+    #[test]
+    fn smart_detection_off_shows_decode_actions() {
+        // SGVsbG8= is valid base64 for "Hello"
+        let config_on = Config {
+            smart_detection: true,
+            ..Config::default()
+        };
+        let config_off = Config {
+            smart_detection: false,
+            ..Config::default()
+        };
+        let actions_on = build_actions(&test_uri(), full_range(), "SGVsbG8=", &config_on);
+        let actions_off = build_actions(&test_uri(), full_range(), "SGVsbG8=", &config_off);
+
+        // With smart detection on, decode actions should appear (input is detected as base64)
+        let has_decode_on = actions_on.iter().any(|a| {
+            if let CodeActionOrCommand::CodeAction(ca) = a {
+                ca.title.contains("Decode")
+            } else {
+                false
+            }
+        });
+        assert!(
+            has_decode_on,
+            "smart detection ON should show decode for base64 input"
+        );
+
+        // With smart detection off, decode actions should also appear (unconditionally)
+        let has_decode_off = actions_off.iter().any(|a| {
+            if let CodeActionOrCommand::CodeAction(ca) = a {
+                ca.title.contains("Decode")
+            } else {
+                false
+            }
+        });
+        assert!(
+            has_decode_off,
+            "smart detection OFF should show decode unconditionally"
+        );
+    }
+
+    #[test]
+    fn hash_uppercase_format() {
+        let config = Config {
+            enabled_categories: vec!["hashing".to_string()],
+            hash_output_format: HashFormat::Uppercase,
+            ..Config::default()
+        };
+        let actions = build_actions(&test_uri(), full_range(), "hello", &config);
+        // All hash actions should produce uppercase hex
+        for action in &actions {
+            if let CodeActionOrCommand::CodeAction(ca) = action {
+                if let Some(edit) = &ca.edit {
+                    if let Some(changes) = &edit.changes {
+                        for edits in changes.values() {
+                            for text_edit in edits {
+                                let hex_chars: Vec<char> = text_edit
+                                    .new_text
+                                    .chars()
+                                    .filter(|c| c.is_ascii_hexdigit() && c.is_ascii_alphabetic())
+                                    .collect();
+                                for c in &hex_chars {
+                                    assert!(
+                                        c.is_ascii_uppercase(),
+                                        "expected uppercase hex in '{}', found '{c}'",
+                                        text_edit.new_text
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // --- Existing extract_range tests ---
 
     #[test]
     fn extract_single_line_range() {

@@ -8,12 +8,18 @@ Select text in any file, then trigger code actions to transform it in place:
 
 | Category | Operations |
 |----------|-----------|
-| Encoding | Base64, Base64URL, URL, HTML, Hex encode/decode |
-| Unicode | Escape/unescape, show codepoints |
-| Misc | Reverse string |
-| *Planned* | Hashing, case conversion, JSON/XML, JWT, UUID, timestamps, and more |
+| Encoding | Base64, Base64URL, URL, HTML, Hex encode/decode, Unicode escape/unescape |
+| Hashing | MD5, SHA-1, SHA-256, SHA-512, CRC32 |
+| Case | UPPER, lower, Title, Sentence, camelCase, PascalCase, snake_case, SCREAMING_SNAKE, kebab-case, dot.case, path/case, CONSTANT_CASE, Toggle |
+| JSON | Pretty print, minify, escape, unescape |
+| XML | Pretty print, minify |
+| CSV | CSV to JSON |
+| Whitespace | Trim, collapse, remove blanks/dupes, sort/reverse/shuffle/number lines |
+| Escape | Backslash, regex, SQL, shell, CSV |
+| Inspect | Character count, byte length, encoding detection |
+| Misc | Reverse string, JWT decode (header/payload/full) |
 
-> **Status:** Under active development — Phase 1 (core transforms). See [roadmap](roadmap/roadmap.md) for the full plan.
+> **Status:** Under active development — Phase 4 (configuration & polish). See [roadmap](roadmap/roadmap.md) for the full plan.
 
 ## Usage
 
@@ -40,6 +46,38 @@ Only transforms that produce a different result from the input are shown, so the
 3. Pick a **StringKnife** transform — the selected text is replaced in place
 
 Only transforms that produce a different result are shown. For example, "Base64 Decode" won't appear if the selection isn't valid Base64.
+
+## Configuration
+
+Configure StringKnife through Zed's `settings.json`. All settings are optional — the defaults work out of the box.
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `stringknife.enabledCategories` | `string[]` | All categories | Which transform categories to show. Valid: `encoding`, `hashing`, `case`, `json`, `xml`, `csv`, `whitespace`, `escape`, `inspect`, `misc` |
+| `stringknife.maxCodeActions` | `number` | `50` | Maximum number of code actions shown in the context menu |
+| `stringknife.smartDetection` | `boolean` | `true` | When true, decode actions only appear if the selection looks like that encoding. When false, all decode actions are shown unconditionally |
+| `stringknife.hashOutputFormat` | `string` | `"lowercase"` | Hash digest format: `"lowercase"` or `"uppercase"` |
+| `stringknife.jsonIndent` | `number` | `2` | Spaces per indent level for JSON Pretty Print |
+| `stringknife.base64LineBreaks` | `boolean` | `false` | Wrap Base64 output at 76 characters per line (MIME style) |
+
+### Example `settings.json`
+
+```json
+{
+  "lsp": {
+    "stringknife-lsp": {
+      "initialization_options": {
+        "enabledCategories": ["encoding", "hashing", "case", "json"],
+        "maxCodeActions": 20,
+        "smartDetection": true,
+        "hashOutputFormat": "uppercase",
+        "jsonIndent": 4,
+        "base64LineBreaks": false
+      }
+    }
+  }
+}
+```
 
 ## Architecture
 
