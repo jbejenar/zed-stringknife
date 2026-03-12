@@ -12,4 +12,4 @@ tags: [session]
 | 3 | 2026-03-11 | Claude Opus 4.6 | EPIC-1.6, A-010, EPIC-2.1, EPIC-2.2 | Smart detection, hash ops, JWT decode, 183 total tests | [[Session-003]] |
 | 4 | 2026-03-11 | Claude Opus 4.6 | EPIC-2.3–2.5, EPIC-3.1–3.4, audits | JSON/XML/CSV/case/whitespace/escape/inspect, 326 tests, 64 actions | [[Session-004]] |
 | 5 | 2026-03-11 | Claude Opus 4.6 | EPIC-4.1 configuration | Config schema, live reload, category filtering, 346 tests | [[Session-005]] |
-| 6 | 2026-03-12 | Claude Opus 4.6 | EPIC-4.2 performance & limits | Size enforcement, Arc docs, timeout, benchmarks, 352 tests | [[Session-006]] |
+| 6 | 2026-03-12 | Claude Opus 4.6 | EPIC-4.2/4.3/4.4 + audits | Performance, error handling, multi-select, A-040/A-041 passed, 371 tests | [[Session-006]] |

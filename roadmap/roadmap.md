@@ -1885,44 +1885,44 @@ Note: The LSP spec provides a single `range` per `codeAction` request. Zed handl
 
 **Priority:** High | **Impact:** High | **Effort:** Medium | **Risk:** Low
 **Source:** Audit Schedule — Phase 4
-**Status:** Not Started
+**Status:** Done
 **Dependencies:** EPIC-4.1, EPIC-4.2, EPIC-4.3, EPIC-4.4
 
 #### Definition of Done
 
-- [ ] **A-040** — Architecture Audit
-  - [ ] Review configuration plumbing: is it clean or spaghetti?
-  - [ ] Profile memory under 1000 sequential code actions (leak test)
-  - [ ] Review LSP lifecycle: clean shutdown, no orphan processes
-  - [ ] Benchmark: all operations < 100ms for 100KB input (hard requirement)
-  - [ ] Document findings in `.vault/audits/ARCH-AUDIT-2.md`
+- [x] **A-040** — Architecture Audit
+  - [x] Review configuration plumbing: is it clean or spaghetti?
+  - [x] Profile memory under 1000 sequential code actions (leak test)
+  - [x] Review LSP lifecycle: clean shutdown, no orphan processes
+  - [x] Benchmark: all operations < 100ms for 100KB input (hard requirement)
+  - [x] Document findings in `.vault/audits/ARCH-AUDIT-2.md`
 
 #### Verification
 
-- [ ] `.vault/audits/ARCH-AUDIT-2.md` committed with benchmark data and memory profile
-- [ ] No memory leaks detected under sustained operation
-- [ ] Performance contract met for all operations
+- [x] `.vault/audits/ARCH-AUDIT-2.md` committed with benchmark data and memory profile
+- [x] No memory leaks detected under sustained operation
+- [x] Performance contract met for all operations
 
 ### 🔍 AUDIT: Dependency Audit #3
 
 **Priority:** High | **Impact:** High | **Effort:** Small | **Risk:** Low
 **Source:** Audit Schedule — Phase 4
-**Status:** Not Started
+**Status:** Done
 **Dependencies:** EPIC-4.1, EPIC-4.3 (new deps for config/logging)
 
 #### Definition of Done
 
-- [ ] **A-041** — Dependency Audit
-  - [ ] Full transitive dependency audit
-  - [ ] Check for any new crates added for config/logging
-  - [ ] Verify `tracing` dependency is justified vs. simpler logging
-  - [ ] Document in `.vault/audits/DEP-AUDIT-3.md`
+- [x] **A-041** — Dependency Audit
+  - [x] Full transitive dependency audit
+  - [x] Check for any new crates added for config/logging
+  - [x] Verify `tracing` dependency is justified vs. simpler logging
+  - [x] Document in `.vault/audits/DEP-AUDIT-3.md`
 
 #### Verification
 
-- [ ] `.vault/audits/DEP-AUDIT-3.md` committed with transitive dep count
-- [ ] `tracing` justification documented
-- [ ] `cargo deny check` passes
+- [x] `.vault/audits/DEP-AUDIT-3.md` committed with transitive dep count
+- [x] `tracing` justification documented
+- [ ] `cargo deny check` passes *(cargo-deny not installed in environment; deferred to CI)*
 
 ### 📋 PM REVIEW: PMR-3 — Pre-Launch Review
 
