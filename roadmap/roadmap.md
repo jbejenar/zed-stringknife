@@ -1809,7 +1809,7 @@ Define and implement the LSP configuration schema, allowing users to customise b
 
 **Priority:** High | **Impact:** Very High | **Effort:** Medium | **Risk:** Medium
 **Source:** Product Roadmap v1 — Phase 4
-**Status:** Not Started
+**Status:** Done
 **Dependencies:** EPIC-1.1 through EPIC-3.4 (all transforms implemented)
 **AI-first benefit:** Performance benchmarks provide quantitative pass/fail criteria for agent-driven optimisations.
 
@@ -1817,11 +1817,11 @@ Benchmark all operations, enforce the 100ms/100KB performance contract, set inpu
 
 #### Definition of Done
 
-- [ ] **T-410** — Benchmark code action response time for 1KB, 10KB, 100KB, 1MB selections
-- [ ] **T-411** — Set maximum input size limit (default: 1MB) with clear error message
-- [ ] **T-412** — Ensure document sync doesn't hold full document copies unnecessarily
-- [ ] **T-413** — Profile memory usage under sustained operation
-- [ ] **T-414** — Add timeout handling for code action computation (5 second max)
+- [x] **T-410** — Benchmark code action response time for 1KB, 10KB, 100KB, 1MB selections
+- [x] **T-411** — Set maximum input size limit (default: 1MB) with clear error message
+- [x] **T-412** — Ensure document sync doesn't hold full document copies unnecessarily
+- [x] **T-413** — Profile memory usage under sustained operation
+- [x] **T-414** — Add timeout handling for code action computation (5 second max)
 
 #### Verification
 

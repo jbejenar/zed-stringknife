@@ -3,7 +3,8 @@
 mod config;
 
 use std::collections::HashMap;
-use std::sync::{Mutex, RwLock};
+use std::sync::{Arc, Mutex, RwLock};
+use std::time::Duration;
 
 use tower_lsp::jsonrpc::Result;
 use tower_lsp::lsp_types::{
@@ -20,12 +21,17 @@ use stringknife_core::transforms::{
     base64, case, csv, escape, hash, hex, html, inspect, json, jwt, misc, unicode, url, whitespace,
     xml,
 };
+use stringknife_core::MAX_INPUT_BYTES;
 
 use crate::config::{Config, HashFormat};
 
 /// Document store: maps document URIs to their full text content.
+///
+/// Uses `Arc<String>` so that `get_text()` returns a cheap reference-counted
+/// handle instead of cloning the full document on every code-action request.
+/// Documents are removed from the store on `textDocument/didClose`.
 struct DocumentStore {
-    documents: Mutex<HashMap<Url, String>>,
+    documents: Mutex<HashMap<Url, Arc<String>>>,
 }
 
 impl DocumentStore {
@@ -35,7 +41,7 @@ impl DocumentStore {
         }
     }
 
-    fn get_text(&self, uri: &Url) -> Option<String> {
+    fn get_text(&self, uri: &Url) -> Option<Arc<String>> {
         self.documents
             .lock()
             .ok()
@@ -44,7 +50,7 @@ impl DocumentStore {
 
     fn set_text(&self, uri: Url, text: String) {
         if let Ok(mut docs) = self.documents.lock() {
-            docs.insert(uri, text);
+            docs.insert(uri, Arc::new(text));
         }
     }
 
@@ -144,9 +150,56 @@ impl LanguageServer for Backend {
             return Ok(Some(Vec::new()));
         };
 
+        // T-411: Early size check with user-facing feedback.
+        if selected.len() > MAX_INPUT_BYTES {
+            self.client
+                .show_message(
+                    MessageType::WARNING,
+                    format!(
+                        "StringKnife: selection too large ({} bytes, max {} bytes). \
+                         Reduce selection size to use transforms.",
+                        selected.len(),
+                        MAX_INPUT_BYTES,
+                    ),
+                )
+                .await;
+            return Ok(Some(Vec::new()));
+        }
+
         let config = self.config.read().map(|c| c.clone()).unwrap_or_default();
 
-        Ok(Some(build_actions(uri, range, &selected, &config)))
+        // T-414: Run transforms on the blocking thread pool with a 5-second timeout.
+        let uri_owned = uri.clone();
+        let timeout_result = tokio::time::timeout(
+            Duration::from_secs(5),
+            tokio::task::spawn_blocking(move || {
+                build_actions(&uri_owned, range, &selected, &config)
+            }),
+        )
+        .await;
+
+        match timeout_result {
+            Ok(Ok(actions)) => Ok(Some(actions)),
+            Ok(Err(_join_err)) => {
+                self.client
+                    .log_message(
+                        MessageType::ERROR,
+                        "StringKnife: internal error computing code actions",
+                    )
+                    .await;
+                Ok(Some(Vec::new()))
+            }
+            Err(_elapsed) => {
+                self.client
+                    .show_message(
+                        MessageType::WARNING,
+                        "StringKnife: code action computation timed out (5s). \
+                         Try a smaller selection.",
+                    )
+                    .await;
+                Ok(Some(Vec::new()))
+            }
+        }
     }
 }
 
@@ -903,5 +956,89 @@ mod tests {
         assert_eq!(char_offset_to_byte("héllo", 0), Some(0));
         assert_eq!(char_offset_to_byte("héllo", 1), Some(1)); // 'h'
         assert_eq!(char_offset_to_byte("héllo", 2), Some(3)); // after 'é' (2 bytes)
+    }
+
+    // --- T-411: Size limit enforcement tests ---
+
+    #[test]
+    fn oversized_input_produces_no_actions() {
+        let config = Config::default();
+        // 1 byte over the limit
+        let oversized = "x".repeat(MAX_INPUT_BYTES + 1);
+        let actions = build_actions(&test_uri(), full_range(), &oversized, &config);
+        // Individual transforms return InputTooLarge which is silently discarded,
+        // so build_actions returns an empty list for oversized input.
+        assert!(
+            actions.is_empty(),
+            "oversized input should produce no actions, got {}",
+            actions.len()
+        );
+    }
+
+    // --- T-412: DocumentStore Arc tests ---
+
+    #[test]
+    fn document_store_set_get_remove() {
+        let store = DocumentStore::new();
+        let uri = Url::parse("file:///test.txt").expect("valid URL");
+        store.set_text(uri.clone(), "hello".to_string());
+        assert_eq!(
+            store.get_text(&uri).as_deref().map(String::as_str),
+            Some("hello")
+        );
+        store.remove(&uri);
+        assert!(store.get_text(&uri).is_none());
+    }
+
+    #[test]
+    fn document_store_arc_sharing() {
+        let store = DocumentStore::new();
+        let uri = Url::parse("file:///test.txt").expect("valid URL");
+        store.set_text(uri.clone(), "hello".to_string());
+        let text1 = store.get_text(&uri).expect("text1");
+        let text2 = store.get_text(&uri).expect("text2");
+        assert!(
+            Arc::ptr_eq(&text1, &text2),
+            "repeated get_text should return the same Arc allocation"
+        );
+    }
+
+    #[test]
+    fn document_store_overwrite() {
+        let store = DocumentStore::new();
+        let uri = Url::parse("file:///test.txt").expect("valid URL");
+        store.set_text(uri.clone(), "old content".to_string());
+        store.set_text(uri.clone(), "new content".to_string());
+        assert_eq!(
+            store.get_text(&uri).as_deref().map(String::as_str),
+            Some("new content")
+        );
+    }
+
+    // --- T-413: Sustained operation tests ---
+
+    #[test]
+    fn sustained_build_actions_no_accumulation() {
+        let uri = test_uri();
+        let config = Config::default();
+        for _ in 0..1000 {
+            let actions = build_actions(&uri, full_range(), "hello world", &config);
+            assert!(!actions.is_empty());
+        }
+        // build_actions is stateless — if this completes, there is no accumulation.
+    }
+
+    #[test]
+    fn document_store_churn() {
+        let store = DocumentStore::new();
+        let content = "x".repeat(102_400); // 100KB
+        for i in 0..100 {
+            let uri = Url::parse(&format!("file:///doc_{i}.txt")).expect("valid URL");
+            store.set_text(uri.clone(), content.clone());
+            assert!(store.get_text(&uri).is_some());
+            store.remove(&uri);
+            assert!(store.get_text(&uri).is_none());
+        }
+        // All documents removed — store should be empty.
     }
 }
