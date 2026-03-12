@@ -23,13 +23,11 @@ Select text in any file, then trigger code actions to transform it in place:
 
 ## Usage
 
-1. **Select text** in any supported file
-2. Open code actions:
-   - Right-click the selection and choose from the **StringKnife** entries, or
-   - Press `Cmd+.` (macOS) / `Ctrl+.` (Linux) to open the code action menu
-3. Pick a transform — the selected text is replaced in place
+1. **Select text** in any file
+2. Press **`Cmd+.`** (macOS) or **`Ctrl+.`** (Linux) to open the code actions menu — or right-click the selection
+3. Pick a **StringKnife** transform — the selected text is replaced in place
 
-Only transforms that produce a different result from the input are shown, so the menu stays clean (e.g., "Base64 Decode" won't appear if the selection isn't valid Base64).
+Only transforms that produce a different result are shown. For example, "Base64 Decode" won't appear if the selection isn't valid Base64.
 
 ## Installation
 
@@ -38,14 +36,6 @@ Only transforms that produce a different result from the input are shown, so the
 1. Open Zed
 2. `Cmd+Shift+P` → "zed: extensions"
 3. Search for "StringKnife" and install
-
-## Usage
-
-1. **Select text** in any file
-2. Press **`Cmd+.`** (macOS) or **`Ctrl+.`** (Linux) to open the code actions menu — or right-click the selection
-3. Pick a **StringKnife** transform — the selected text is replaced in place
-
-Only transforms that produce a different result are shown. For example, "Base64 Decode" won't appear if the selection isn't valid Base64.
 
 ## Configuration
 
