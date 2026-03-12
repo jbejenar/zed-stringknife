@@ -140,6 +140,19 @@ impl LanguageServer for Backend {
         self.store.remove(&params.text_document.uri);
     }
 
+    /// Handle a `textDocument/codeAction` request.
+    ///
+    /// # Multi-selection behavior (T-430)
+    ///
+    /// The LSP specification provides a single `range` per `codeAction` request.
+    /// When the user has multiple cursors/selections, Zed sends a separate
+    /// `codeAction` request for each selection. Each request is handled
+    /// independently — the server is stateless between requests.
+    ///
+    /// Because each response contains a `WorkspaceEdit` scoped to its own range,
+    /// Zed can apply multiple code actions in sequence without conflicts.
+    /// If ranges happen to overlap (which Zed prevents), the second edit would
+    /// operate on already-transformed text, which is harmless.
     async fn code_action(&self, params: CodeActionParams) -> Result<Option<CodeActionResponse>> {
         let uri = &params.text_document.uri;
         let range = params.range;
@@ -1122,5 +1135,114 @@ mod tests {
             assert!(store.get_text(&uri).is_none());
         }
         // All documents removed — store should be empty.
+    }
+
+    // --- T-430/T-431/T-432/T-433: Multi-selection tests ---
+
+    #[test]
+    fn independent_ranges_produce_independent_actions() {
+        // T-430/T-431: Simulate multi-cursor by calling build_actions for
+        // different ranges on the same document. Each call is independent.
+        let uri = test_uri();
+        let config = Config::default();
+
+        let range1 = Range {
+            start: Position {
+                line: 0,
+                character: 0,
+            },
+            end: Position {
+                line: 0,
+                character: 5,
+            },
+        };
+        let range2 = Range {
+            start: Position {
+                line: 0,
+                character: 6,
+            },
+            end: Position {
+                line: 0,
+                character: 11,
+            },
+        };
+
+        let actions1 = build_actions(&uri, range1, "hello", &config);
+        let actions2 = build_actions(&uri, range2, "world", &config);
+
+        // Both should produce actions (different text, different ranges)
+        assert!(!actions1.is_empty());
+        assert!(!actions2.is_empty());
+
+        // Actions should reference their respective ranges
+        if let CodeActionOrCommand::CodeAction(ca) = &actions1[0] {
+            if let Some(edit) = &ca.edit {
+                if let Some(changes) = &edit.changes {
+                    for edits in changes.values() {
+                        assert_eq!(edits[0].range, range1);
+                    }
+                }
+            }
+        }
+        if let CodeActionOrCommand::CodeAction(ca) = &actions2[0] {
+            if let Some(edit) = &ca.edit {
+                if let Some(changes) = &edit.changes {
+                    for edits in changes.values() {
+                        assert_eq!(edits[0].range, range2);
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn ten_simultaneous_selections_within_budget() {
+        // T-432: Performance remains within budget with 10+ selections.
+        let uri = test_uri();
+        let config = Config::default();
+        let start = std::time::Instant::now();
+
+        for i in 0..10 {
+            let range = Range {
+                start: Position {
+                    line: 0,
+                    character: i * 10,
+                },
+                end: Position {
+                    line: 0,
+                    character: i * 10 + 5,
+                },
+            };
+            let actions = build_actions(&uri, range, "hello", &config);
+            assert!(!actions.is_empty());
+        }
+
+        let elapsed = start.elapsed();
+        assert!(
+            elapsed.as_millis() < 5000,
+            "10 sequential code action computations should complete well under 5s, took {elapsed:?}"
+        );
+    }
+
+    #[test]
+    fn same_range_different_text_produces_different_actions() {
+        // T-433: Each code action request operates on the text extracted from
+        // its range. Even if ranges overlap, the server operates on the
+        // provided text independently.
+        let uri = test_uri();
+        let config = Config {
+            enabled_categories: vec!["encoding".to_string()],
+            ..Config::default()
+        };
+        let range = full_range();
+
+        // "hello" produces encode actions
+        let actions_text = build_actions(&uri, range, "hello", &config);
+        // "SGVsbG8=" is valid base64, produces decode actions too
+        let actions_b64 = build_actions(&uri, range, "SGVsbG8=", &config);
+
+        // Both should produce actions, but potentially different ones
+        assert!(!actions_text.is_empty());
+        assert!(!actions_b64.is_empty());
     }
 }

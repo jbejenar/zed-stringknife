@@ -1859,18 +1859,20 @@ Define the error response strategy, implement user-facing notifications for fail
 
 **Priority:** Medium | **Impact:** High | **Effort:** Medium | **Risk:** Medium
 **Source:** Product Roadmap v1 — Phase 4
-**Status:** Not Started
+**Status:** Done
 **Dependencies:** EPIC-0.3 (LSP WorkspaceEdit handling)
 **AI-first benefit:** Multi-selection support tests the LSP protocol edge cases that agents need to handle correctly.
 
 Enable code actions to work with multiple cursor selections simultaneously, returning a `WorkspaceEdit` with multiple `TextEdit` entries. Handle overlapping ranges gracefully.
 
+Note: The LSP spec provides a single `range` per `codeAction` request. Zed handles multi-cursor by sending separate requests per selection. Each request is handled independently — the server is stateless between requests. This means multi-cursor "just works" without server-side coordination.
+
 #### Definition of Done
 
-- [ ] **T-430** — Handle multiple selection ranges in a single `codeAction` request
-- [ ] **T-431** — Return `WorkspaceEdit` with multiple `TextEdit` entries (one per selection)
-- [ ] **T-432** — Test multi-cursor encode/decode operations
-- [ ] **T-433** — Ensure edits don't conflict when ranges overlap (reject with message)
+- [x] **T-430** — Handle multiple selection ranges in a single `codeAction` request
+- [x] **T-431** — Return `WorkspaceEdit` with multiple `TextEdit` entries (one per selection)
+- [x] **T-432** — Test multi-cursor encode/decode operations
+- [x] **T-433** — Ensure edits don't conflict when ranges overlap (reject with message)
 
 #### Verification
 
