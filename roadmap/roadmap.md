@@ -1928,28 +1928,28 @@ Note: The LSP spec provides a single `range` per `codeAction` request. Zed handl
 
 **Priority:** Critical | **Impact:** Very High | **Effort:** Small | **Risk:** Low
 **Source:** PM Governance Cadence
-**Status:** Not Started
+**Status:** Done
 **Dependencies:** EPIC-4.1, EPIC-4.2, EPIC-4.3, EPIC-4.4, A-040, A-041
 
 #### Definition of Done
 
-- [ ] **PMR-3** — Conduct Pre-Launch Review
-  - [ ] Full feature inventory: what's shipping in v0.5.0?
-  - [ ] Kill list: any features that are half-baked and should be cut rather than shipped broken?
-  - [ ] Review README: is it compelling for a developer discovering StringKnife in the store?
-  - [ ] Review demo assets: do the GIFs clearly show the value proposition?
-  - [ ] Review store listing: description, icon, metadata
-  - [ ] Review CHANGELOG: is it coherent and useful?
-  - [ ] Competitive check: has anyone published a similar extension since PMR-1?
-  - [ ] Decision: **final v0.5.0 scope lock**
-  - [ ] Marketing checklist: where to announce, who to tell
-  - [ ] Document decisions in `.vault/pm-reviews/PMR-3.md`
+- [x] **PMR-3** — Conduct Pre-Launch Review
+  - [x] Full feature inventory: what's shipping in v0.5.0?
+  - [x] Kill list: any features that are half-baked and should be cut rather than shipped broken?
+  - [x] Review README: is it compelling for a developer discovering StringKnife in the store?
+  - [ ] Review demo assets: do the GIFs clearly show the value proposition? *(deferred to EPIC-5.1 T-504)*
+  - [x] Review store listing: description, icon, metadata
+  - [x] Review CHANGELOG: is it coherent and useful?
+  - [x] Competitive check: has anyone published a similar extension since PMR-1?
+  - [x] Decision: **final v0.5.0 scope lock** — ship all 64 code actions, no cuts
+  - [x] Marketing checklist: where to announce, who to tell
+  - [x] Document decisions in `.vault/pm-reviews/PMR-3.md`
 
 #### Verification
 
-- [ ] `.vault/pm-reviews/PMR-3.md` committed with v0.5.0 scope lock and kill list
-- [ ] README reviewed and updated for store-readiness
-- [ ] Demo assets created and reviewed
+- [x] `.vault/pm-reviews/PMR-3.md` committed with v0.5.0 scope lock and kill list
+- [x] README reviewed and updated for store-readiness
+- [ ] Demo assets created and reviewed *(deferred to EPIC-5.1 T-504)*
 
 **Phase 4 Exit Criteria:** Extension is configurable, performant on large inputs, handles errors gracefully, and supports multi-cursor. Benchmark regression gate active on PRs. Test coverage ≥ 80% on `transforms/`. Architecture audit passed. Pre-launch scope locked.
 

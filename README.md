@@ -19,7 +19,7 @@ Select text in any file, then trigger code actions to transform it in place:
 | Inspect | Character count, byte length, encoding detection |
 | Misc | Reverse string, JWT decode (header/payload/full) |
 
-> **Status:** Under active development — Phase 4 (configuration & polish). See [roadmap](roadmap/roadmap.md) for the full plan.
+> **64 code actions** across 10 categories. See [CHANGELOG](CHANGELOG.md) for the full feature list and [roadmap](roadmap/roadmap.md) for the plan.
 
 ## Usage
 
@@ -31,11 +31,11 @@ Only transforms that produce a different result are shown. For example, "Base64 
 
 ## Installation
 
-### From Zed Extensions (coming soon)
+### From Zed Extensions
 
 1. Open Zed
 2. `Cmd+Shift+P` → "zed: extensions"
-3. Search for "StringKnife" and install
+3. Search for **StringKnife** and install
 
 ## Configuration
 
