@@ -1,5 +1,8 @@
 # StringKnife
 
+[![CI](https://github.com/jbejenar/zed-stringknife/actions/workflows/ci.yml/badge.svg)](https://github.com/jbejenar/zed-stringknife/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 A surgical string transformation toolkit for the [Zed editor](https://zed.dev), delivered as an LSP-based extension with code-action transforms.
 
 ## Features
@@ -69,6 +72,14 @@ Configure StringKnife through Zed's `settings.json`. All settings are optional �
 }
 ```
 
+## Supported Languages
+
+StringKnife works in any file type. The LSP activates for: Rust, TypeScript, JavaScript, Python, Go, Ruby, HTML, CSS, JSON, TOML, YAML, Markdown, Plain Text, C, C++, Java, Kotlin, Swift, Shell Script, SQL, Elixir, and PHP.
+
+## Contributing
+
+See [HINTS.md](HINTS.md) for style conventions and the [Adding a New Transform](.vault/patterns/Adding%20a%20New%20Transform.md) guide.
+
 ## Architecture
 
 StringKnife is a three-layer stack — arrows point downward only:
@@ -80,6 +91,16 @@ Transform Core (stringknife-core/)   → Pure functions: fn(&str) -> Result<Stri
 ```
 
 The transform layer has zero LSP dependencies, no I/O, and no side effects.
+
+## Built with ariscan
+
+This repository uses [ariscan](https://github.com/jbejenar/prontiq-ariscan) to measure AI-agent readiness at every phase gate. The ARI (Agent Readiness Index) tracks how well the codebase supports autonomous agent contributions across 8 pillars.
+
+| Checkpoint | Phase | Score |
+|-----------|-------|-------|
+| ARI-BASELINE | 0 | 59/100 |
+
+[Browse the Knowledge Vault](.vault/Home.md) for architecture decisions, session history, and transform registry.
 
 ## License
 

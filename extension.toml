@@ -1,6 +1,6 @@
 id = "stringknife"
 name = "StringKnife"
-description = "🔪 50+ string/text manipulation commands — encode, decode, hash, case-convert, extract, and more — available as code actions in any file."
+description = "64 string/text manipulation commands — encode, decode, hash, case-convert, and more — available as code actions in any file."
 authors = ["John Bejenariu <jbejenar@users.noreply.github.com>"]
 repository = "https://github.com/jbejenar/zed-stringknife"
 schema_version = 1

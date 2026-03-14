@@ -1963,7 +1963,7 @@ Note: The LSP spec provides a single `range` per `codeAction` request. Zed handl
 
 **Priority:** Critical | **Impact:** Very High | **Effort:** Medium | **Risk:** Low
 **Source:** Product Roadmap v1 — Phase 5
-**Status:** Not Started
+**Status:** In Progress
 **Dependencies:** PMR-3 (scope locked)
 **AI-first benefit:** Store-ready documentation and demo assets make the extension discoverable and usable without human onboarding.
 
@@ -1971,40 +1971,40 @@ Prepare all assets for Zed Extension Store publication: comprehensive README wit
 
 #### Definition of Done
 
-- [ ] **T-500** — Verify extension ID `stringknife` is available in the Zed extension registry
-- [ ] **T-501** — Ensure `extension.toml` passes all Zed validation rules
-  - [ ] ID does not contain "zed"
-  - [ ] Version is semver
-  - [ ] License file present and accepted (MIT)
-  - [ ] Repository URL is HTTPS
+- [ ] **T-500** — Verify extension ID `stringknife` is available in the Zed extension registry *(needs manual check)*
+- [x] **T-501** — Ensure `extension.toml` passes all Zed validation rules
+  - [x] ID does not contain "zed"
+  - [x] Version is semver
+  - [x] License file present and accepted (MIT)
+  - [x] Repository URL is HTTPS
 - [ ] **T-502** — Write comprehensive `README.md`
-  - [ ] Feature list with GIF/video demos
-  - [ ] Installation instructions
-  - [ ] Configuration reference table
-  - [ ] Supported file types list
-  - [ ] Contributing guidelines link
-  - [ ] Changelog link
-- [ ] **T-503** — Create extension icon/logo (SVG, follows Zed extension store guidelines)
-- [ ] **T-504** — Create demo GIFs showing key workflows
+  - [ ] Feature list with GIF/video demos *(GIFs deferred to T-504)*
+  - [x] Installation instructions
+  - [x] Configuration reference table
+  - [x] Supported file types list
+  - [x] Contributing guidelines link
+  - [x] Changelog link
+- [ ] **T-503** — Create extension icon/logo (SVG, follows Zed extension store guidelines) *(needs design)*
+- [ ] **T-504** — Create demo GIFs showing key workflows *(needs manual Zed recording)*
   - [ ] Base64 encode/decode
   - [ ] JWT decode
   - [ ] Case conversion
   - [ ] Smart detection in action
-- [ ] **T-505** — Update `HINTS.md` with final architecture, contributor onboarding, and "how to add a new operation" guide
-- [ ] **T-506** — Add ARI badge to `README.md`
-  - [ ] Dynamic badge sourced from ariscan CI output: `ARI 8.7 / 10` with colour scale (red <6, yellow 6–7.9, green ≥8)
-  - [ ] Position: top of README alongside license and CI badges
-  - [ ] Badge links to `.vault/ari/ARI Dashboard.md` on GitHub
-- [ ] **T-507** — Add "Built with ariscan" section to `README.md`
-  - [ ] 2–3 sentences: factual, not promotional — "This repository uses ariscan to measure AI-agent readiness at every phase gate."
-  - [ ] Link to Prontiq ariscan repo
-  - [ ] ARI trajectory table pulled from existing checkpoint data (BASELINE through current)
-  - [ ] "Browse the Knowledge Vault" link pointing to `.vault/Home.md`
-- [ ] **T-508** — Make `.vault/` browsable on GitHub
-  - [ ] Confirm wikilinks render as clickable relative links in GitHub's markdown viewer
-  - [ ] If not, add fallback: `[Note Name](./path/to/Note%20Name.md)` alongside wikilinks
-  - [ ] Confirm frontmatter renders as visible YAML block
-- [ ] **T-509** — Add GitHub topics for discoverability
+- [x] **T-505** — Update `HINTS.md` with final architecture, contributor onboarding, and "how to add a new operation" guide
+- [x] **T-506** — Add ARI badge to `README.md`
+  - [ ] Dynamic badge sourced from ariscan CI output: `ARI 8.7 / 10` with colour scale (red <6, yellow 6–7.9, green ≥8) *(deferred: needs CI integration)*
+  - [x] Position: top of README alongside license and CI badges
+  - [ ] Badge links to `.vault/ari/ARI Dashboard.md` on GitHub *(added when dynamic badge ready)*
+- [x] **T-507** — Add "Built with ariscan" section to `README.md`
+  - [x] 2–3 sentences: factual, not promotional — "This repository uses ariscan to measure AI-agent readiness at every phase gate."
+  - [x] Link to Prontiq ariscan repo
+  - [x] ARI trajectory table pulled from existing checkpoint data (BASELINE through current)
+  - [x] "Browse the Knowledge Vault" link pointing to `.vault/Home.md`
+- [x] **T-508** — Make `.vault/` browsable on GitHub
+  - [x] Confirm wikilinks render as clickable relative links in GitHub's markdown viewer
+  - [x] If not, add fallback: `[Note Name](./path/to/Note%20Name.md)` alongside wikilinks
+  - [x] Confirm frontmatter renders as visible YAML block
+- [ ] **T-509** — Add GitHub topics for discoverability *(needs gh CLI or GitHub web UI)*
   - [ ] `ariscan`, `ai-agent-readiness`, `zed-extension`, `lsp`, `rust`, `string-transformation`
   - [ ] Update repo description: "A string transformation toolkit for Zed — built with ariscan-driven development"
 

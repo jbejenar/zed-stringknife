@@ -13,4 +13,4 @@ tags: [session]
 | 4 | 2026-03-11 | Claude Opus 4.6 | EPIC-2.3–2.5, EPIC-3.1–3.4, audits | JSON/XML/CSV/case/whitespace/escape/inspect, 326 tests, 64 actions | [[Session-004]] |
 | 5 | 2026-03-11 | Claude Opus 4.6 | EPIC-4.1 configuration | Config schema, live reload, category filtering, 346 tests | [[Session-005]] |
 | 6 | 2026-03-12 | Claude Opus 4.6 | EPIC-4.2/4.3/4.4 + audits | Performance, error handling, multi-select, A-040/A-041 passed, 371 tests | [[Session-006]] |
-| 7 | 2026-03-14 | Claude Opus 4.6 | PMR-3 Pre-Launch Review | Scope locked v0.5.0, CHANGELOG written, README updated, version bumped | [[Session-007]] |
+| 7 | 2026-03-14 | Claude Opus 4.6 | PMR-3 + EPIC-5.1 partial | Scope locked v0.5.0, CHANGELOG, README, HINTS.md, vault browsability | [[Session-007]] |
