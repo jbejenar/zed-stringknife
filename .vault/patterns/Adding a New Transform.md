@@ -62,7 +62,13 @@ new module file.
 
 ## 4. Register as Code Action
 
-In `stringknife-lsp/src/handlers.rs`, add the transform to the code action list.
+In `stringknife-lsp/src/main.rs`, add the transform to the `build_actions()` function.
+Use one of the existing patterns:
+
+- **Encode (always shown):** `try_encode("StringKnife: Name", "category", transform_fn(selected));`
+- **Decode (smart detection):** `try_decode("StringKnife: Name", "category", transform_fn(selected));`
+
+The category string must match one of: `encoding`, `hashing`, `case`, `json`, `xml`, `csv`, `whitespace`, `escape`, `inspect`, `misc`.
 
 ## 5. Update Registry
 

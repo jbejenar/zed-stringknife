@@ -69,6 +69,19 @@ This is not optional — it is a project requirement tracked by EPIC-0.1A.
 - Required CI checks: build, test, lint, deny, audit
 - No force pushes to `main`
 
+## How to Add a New Operation
+
+See `.vault/patterns/Adding a New Transform.md` for the full guide. Quick summary:
+
+1. Add a pure function in `stringknife-core/src/transforms/<module>.rs`
+   - Signature: `pub fn name(input: &str) -> Result<String, StringKnifeError>`
+   - Check `MAX_INPUT_SIZE` at entry
+   - Add `#[cfg(test)]` module with tests
+2. Export from `stringknife-core/src/transforms/mod.rs` (if new module)
+3. Register as code action in `stringknife-lsp/src/main.rs` `build_actions()` function
+4. Update `.vault/transforms/Transform Registry.md`
+5. Run `make test && make lint` to verify
+
 ## File System Rules
 
 - No file system access in transforms (Layer 3)
