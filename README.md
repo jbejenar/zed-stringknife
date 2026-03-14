@@ -11,7 +11,7 @@ Select text in any file, then trigger code actions to transform it in place:
 
 | Category | Operations |
 |----------|-----------|
-| Encoding | Base64, Base64URL, URL, HTML, Hex encode/decode, Unicode escape/unescape |
+| Encoding | Base64, Base64URL, URL, HTML, Hex encode/decode, Unicode escape/unescape, JWT decode (header/payload/full) |
 | Hashing | MD5, SHA-1, SHA-256, SHA-512, CRC32 |
 | Case | UPPER, lower, Title, Sentence, camelCase, PascalCase, snake_case, SCREAMING_SNAKE, kebab-case, dot.case, path/case, CONSTANT_CASE, Toggle |
 | JSON | Pretty print, minify, escape, unescape |
@@ -20,7 +20,7 @@ Select text in any file, then trigger code actions to transform it in place:
 | Whitespace | Trim, collapse, remove blanks/dupes, sort/reverse/shuffle/number lines |
 | Escape | Backslash, regex, SQL, shell, CSV |
 | Inspect | Character count, byte length, encoding detection |
-| Misc | Reverse string, JWT decode (header/payload/full) |
+| Misc | Reverse string |
 
 > **64 code actions** across 10 categories. See [CHANGELOG](CHANGELOG.md) for the full feature list and [roadmap](roadmap/roadmap.md) for the plan.
 
